@@ -7,6 +7,18 @@ Phần mềm quản trị máy tính cho đơn vị quân sự, viết bởi **T
 | **Phiên bản hiện tại** | 5.0.0 — [tải tại đây](https://github.com/doandanhquyetqk7/Danny/releases/tag/v5.0.0) |
 | **Nền tảng** | .NET 8 / Windows Forms · yêu cầu quyền Administrator |
 | **Liên hệ** | 0366.714.139 · Bộ Chỉ huy Quân sự tỉnh Lâm Đồng |
+| **Theo dõi phiên bản** | [Projects board — Danny project](https://github.com/users/doandanhquyetqk7/projects/1) |
+
+## Lộ trình phát triển
+
+| Phiên bản | Nội dung | Trạng thái |
+|---|---|---|
+| **ver5.0** | Bước cuối: tự động cài lại MiAV trước khi reboot | ✅ Đã phát hành — [release](https://github.com/doandanhquyetqk7/Danny/releases/tag/v5.0.0) |
+| **ver5.1** | Báo cáo & nhật ký làm sạch tổng hợp theo đơn vị, xuất PDF | 🔵 Ready |
+| **ver5.2** | Xác minh chữ ký Authenticode cho bộ phân phối | ⚪ Backlog |
+| **ver5.3** | Dashboard trạng thái giám sát EDR (4 service MiAV + driver kernel) | ⚪ Backlog |
+| **ver5.4** | Chế độ an toàn "không Internet" cho bước làm sạch (tự ngắt adapter) | ⚪ Backlog |
+
 
 ## Các tab chức năng
 
