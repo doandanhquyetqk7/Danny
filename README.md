@@ -1,4 +1,98 @@
-# got_overwrite — CTF Dong Nai 2026
+# Danny — Trợ lý Công nghệ thông tin (ver5.0)
+
+Phần mềm quản trị máy tính cho đơn vị quân sự, viết bởi **Trung tá Đoàn Danh Quyết**.
+
+| | |
+|---|---|
+| **Phiên bản hiện tại** | 5.0.0 — [tải tại đây](https://github.com/doandanhquyetqk7/Danny/releases/tag/v5.0.0) |
+| **Nền tảng** | .NET 8 / Windows Forms · yêu cầu quyền Administrator |
+| **Liên hệ** | 0366.714.139 · Bộ Chỉ huy Quân sự tỉnh Lâm Đồng |
+
+## Các tab chức năng
+
+| # | Tab | Chức năng |
+|---|---|---|
+| 1 | **KIỂM TRA KẾT NỐI** | Chẩn đoán 4 bước; tra cứu 130 đơn vị (gõ tiếng Việt có/không dấu); xuất báo cáo |
+| 2 | **USB AN TOÀN 2.6** | Tạo USB an toàn cho MiAV — không bị chặn ở tầng kernel; thư mục `DATA` đọc/ghi nhưng chặn chạy `.exe` |
+| 3 | **CẤU HÌNH IP MỘT CHẠM** | Đặt IP tĩnh LAN đúng dải đơn vị, có rollback khi lỗi |
+| 4 | **CẤU HÌNH MẠNG** | Cấu hình IP/DNS thủ công |
+| 5 | **LÀM SẠCH PC MỘT CHẠM** | Xóa log MiAV + artifact Windows → quét KVRT → **cài lại MiAV** → reboot |
+| 6 | **BẢO MẬT & TIỆN ÍCH** | Chạy KVRT thủ công, xóa Event Viewer, hiện file ẩn |
+
+## Quy trình “Làm sạch PC một chạm” (ver5.0)
+
+```
+ 1  Kiểm tra trạng thái Internet           8  Xóa NHÓM B (artifact MiAV)
+ 2  Kiểm kê dòng Logs type='Internet'     9  Xác minh
+ 3  Sao lưu AgentFMC                      10  Bật lại 4 service MiAV
+ 4  Dừng 4 service MiAV                  11  Kaspersky KVRT — quét toàn bộ ổ + khử nhiễm
+ 5  Dừng tiến trình GUI MiAV             12  ★ Cài lại MiAV (SetupMiAV.exe /VERYSILENT)
+ 6  Xóa NHÓM A (bảng Logs, policy.*)     13  Báo cáo CSV → Khởi động lại máy
+ 7  Xóa NHÓM C (browser, SRUM, DNS…)
+```
+
+Bước 12 (mới ở ver5.0) gọi `SetupMiAV.exe` với tham số
+`/VERYSILENT /SUPPRESSMSGBOXES /SP- /NORESTART /LANG=english /LOG="…"`,
+rồi xác minh 4 service `MiAVWD` / `MiAVUpdate` / `MiAVProtect` / `Defense`
+đã được tạo.
+
+## Cấu trúc bộ cài
+
+```
+Danny-ver5.0/
+├── Danny-ver5.0.exe           69,15 MB  ← khuyến nghị (self-contained)
+├── Danny-ver5.0-nethost.exe   1,36 MB  ← cần .NET 8 Desktop Runtime
+├── tools\KVRT.exe            116,28 MB
+├── tools\SetupMiAV.exe        21,20 MB
+└── HUONG-DAN-SU-DUNG.md
+```
+
+## Mã nguồn
+
+| Đường dẫn | Nội dung |
+|---|---|
+| `NetSecTool/` | Mã nguồn C# (.NET 8 WinForms) |
+| `NetSecTool/PcCleaner.cs` | Engine làm sạch + cài lại MiAV |
+| `NetSecTool/UsbSafeMaker.cs`, `UsbFormatter.cs` | Tạo USB an toàn 2.6 |
+| `NetSecTool/IpPlan.cs`, `IpNetTable.cs`, `OneClickIpService.cs` | Cấu hình IP một chạm |
+| `NetSecTool/NetDiagnostics.cs` | Chẩn đoán kết nối mạng |
+| `NetSecTool/UnitSearch.cs`, `UnitSearchBox.cs` | Tìm kiếm đơn vị (bỏ dấu tiếng Việt) |
+| `Phan tich MiAV/` | Báo cáo phân tích EDR MiAV 4.1.1.2 + script làm sạch log |
+| `report/` | Báo cáo cơ chế MiAV / USB An Toàn (kèm sơ đồ) |
+| `evidence/` | Evidence E-001 … E-008 |
+
+## Build
+
+```bash
+cd NetSecTool
+# self-contained, single-file
+dotnet publish -c Release -r win-x64 --self-contained true \
+  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
+  -p:EnableCompressionInSingleFile=true -o ../work/pub
+
+# framework-dependent, single-file
+dotnet publish -c Release -r win-x64 -p:SelfContained=false \
+  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
+  -o ../work/pub-nethost
+```
+
+> File nhị phân lớn (`*.exe`, `*.zip`) được lưu bằng **Git LFS** — cần `git lfs install` khi clone.
+
+## CLI
+
+```cmd
+Danny-ver5.0.exe --make-safe "J:\"    :: Tạo USB An Toàn 2.6
+Danny-ver5.0.exe --check "J:\"        :: Kiểm tra trạng thái USB an toàn
+Danny-ver5.0.exe --diag [--full]       :: Kiểm tra kết nối mạng
+Danny-ver5.0.exe --clean               :: Làm sạch PC một chạm (kèm cài lại MiAV)
+```
+
+---
+
+# Hồ sơ phân tích (reverse engineering)
+
+> Workspace dùng chung cho nhiều case. Phân tích mới nhất nằm ở [`report/report.md`](report/report.md)
+> và [`Phan tich MiAV/BAO-CAO-PHAN-TICH-MIAV.md`](Phan%20tich%20MiAV/BAO-CAO-PHAN-TICH-MIAV.md).
 
 ## Case hiện tại: MiAV 4.1.1.2 & USB An Toàn 2.6 (BTL86) — cơ chế quản lý USB
 
