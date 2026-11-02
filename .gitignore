@@ -1,0 +1,45 @@
+# ---- Build output ----
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.vscode/
+*.userprefs
+
+# ---- Temporary analysis workspace (very large, ~2 GB) ----
+work/
+unzipped/
+unzipped2/
+ext/
+bin/
+
+# ---- Historical releases (kept on disk; only ver5.0 is published to the repo) ----
+Danny-ver1.0/
+Danny-ver2.0/
+Danny-ver3.0/
+Danny-ver4.0/
+Danny-ver1.0.zip
+Danny-ver4.0.zip
+
+# ---- Reverse-skill scratch ----
+reverse-skill-main/**/node_modules/
+reverse-skill-main/**/__pycache__/
+
+# ---- Loose scratch scripts from ad-hoc reverse-engineering sessions ----
+/analyze_oracle.py
+/compare.py
+/disasm2.py
+/exploit.py
+/got_overwrite
+/got_overwrite.bak
+/got_overwrite.zip
+/inspect_elf.py
+/oracle_detail.py
+/verify_offset5.py
+/duong_ong_ro_ri_du_lieu.zip
+
+# ---- OS noise ----
+Thumbs.db
+desktop.ini
+.DS_Store

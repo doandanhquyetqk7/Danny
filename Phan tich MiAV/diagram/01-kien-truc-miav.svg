@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="760" viewBox="0 0 1180 760">
+<defs>
+<marker id="ah" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 z" fill="#20301C"/></marker>
+</defs>
+<rect width="100%" height="100%" fill="#F7F5EE"/>
+<text x="30" y="38" font-family="Segoe UI, Arial, sans-serif" font-size="21" fill="#20301C" text-anchor="start" font-weight="bold">Kien truc thanh phan MiAV 4.1.1.2 (BTL86)</text>
+
+<text x="30" y="68" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#6B6B6B" text-anchor="start" font-weight="normal">Cai dat: Inno Setup 6.6.1 -&gt; C:\Users\Public\Documents\AgentFMC\   |   4 service tu khoi dong + 1 khoa Run</text>
+<rect x="40" y="95" width="250" height="120" rx="6" fill="#FFFFFF" stroke="#20301C" stroke-width="2"/>
+<text x="165.0" y="115" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#20301C" text-anchor="middle" font-weight="bold">SetupMiAV.exe</text>
+<text x="50" y="135" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">Inno Setup 6.6.1</text>
+<text x="50" y="151" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">AppVersion 4.1.1.2</text>
+<text x="50" y="167" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">Publisher: BTL86, Inc.</text>
+<text x="50" y="183" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">LZMA compression</text>
+<rect x="40" y="280" width="255" height="95" rx="6" fill="#FFFFFF" stroke="#1F5C2E" stroke-width="2.5"/>
+<text x="167.5" y="300" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#1F5C2E" text-anchor="middle" font-weight="bold">MiAVWD</text>
+<text x="50" y="320" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">MiAV_WD.exe</text>
+<text x="50" y="336" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">Watchdog</text>
+<line x1="165" y1="215" x2="167" y2="280" stroke="#20301C" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="325" y="280" width="255" height="95" rx="6" fill="#FFFFFF" stroke="#1F5C2E" stroke-width="2.5"/>
+<text x="452.5" y="300" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#1F5C2E" text-anchor="middle" font-weight="bold">MiAVUpdate</text>
+<text x="335" y="320" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">MiAV_Update.exe</text>
+<text x="335" y="336" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">Dong bo IOC / policy</text>
+<line x1="165" y1="215" x2="452" y2="280" stroke="#20301C" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="610" y="280" width="255" height="95" rx="6" fill="#FFFFFF" stroke="#8C1D18" stroke-width="2.5"/>
+<text x="737.5" y="300" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#8C1D18" text-anchor="middle" font-weight="bold">MiAVProtect</text>
+<text x="620" y="320" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">MiAV_Protect.exe</text>
+<text x="620" y="336" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">Agent giam sat chinh (32 MB)</text>
+<line x1="165" y1="215" x2="737" y2="280" stroke="#20301C" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="895" y="280" width="255" height="95" rx="6" fill="#FFFFFF" stroke="#C89B1E" stroke-width="2.5"/>
+<text x="1022.5" y="300" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#C89B1E" text-anchor="middle" font-weight="bold">Defense</text>
+<text x="905" y="320" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">SerDefense.exe</text>
+<text x="905" y="336" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">WebSocket + WMI</text>
+<line x1="165" y1="215" x2="1022" y2="280" stroke="#20301C" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="40" y="420" width="250" height="80" rx="6" fill="#FFFFFF" stroke="#20301C" stroke-width="2"/>
+<text x="165.0" y="440" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#20301C" text-anchor="middle" font-weight="bold">MiAV.exe (GUI)</text>
+<text x="50" y="460" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">Delphi 10.4 - EDR engine</text>
+<text x="50" y="476" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">AutoRun: HKLM\...\Run\MiAV</text>
+<rect x="340" y="545" width="380" height="115" rx="6" fill="#F3EFE2" stroke="#8C1D18" stroke-width="3"/>
+<text x="530.0" y="565" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#8C1D18" text-anchor="middle" font-weight="bold">Tang kernel - CBFSFilter</text>
+<text x="350" y="585" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">cbfsfilter20.dll + cbfsfilter20_dta</text>
+<text x="350" y="601" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">GUID {713CC6CE-B3E2-4fd9-838D-E28F558F6866}</text>
+<text x="350" y="617" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">CBRegistry / CBProcess / CBFile</text>
+<text x="350" y="633" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">Cai boi InstallCallBackFilter.exe</text>
+<rect x="770" y="545" width="370" height="115" rx="6" fill="#F3EFE2" stroke="#1F5C2E" stroke-width="2.5"/>
+<text x="955.0" y="565" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#1F5C2E" text-anchor="middle" font-weight="bold">Artifact cuc bo</text>
+<text x="780" y="585" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">data\data.db (SQLite: Logs / LocalFiles / Hashs)</text>
+<text x="780" y="601" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">logs\ , log.txt , syslog.ini</text>
+<text x="780" y="617" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">policy.info / policy.ping / policy.net / policy.tracert*</text>
+<rect x="770" y="280" width="370" height="145" rx="6" fill="#FFFFFF" stroke="#8C1D18" stroke-width="2.5"/>
+<text x="955.0" y="300" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#8C1D18" text-anchor="middle" font-weight="bold">Server FMS (BTL86)</text>
+<text x="780" y="320" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">http://fms.bqp</text>
+<text x="780" y="336" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">http://27.68.131.116:8080  (public)</text>
+<text x="780" y="352" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">http://10.152.4.2            (noi bo)</text>
+<text x="780" y="368" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">REST: /api/v1/events/insert</text>
+<text x="780" y="384" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">        /api/v1/alerts/insert</text>
+<text x="780" y="400" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#20301C" text-anchor="start" font-weight="normal">        /api/v1/active-devices/insert</text>
+<line x1="555" y1="375" x2="555" y2="545" stroke="#8C1D18" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#ah)"/>
+<rect x="503.0" y="446.0" width="104.0" height="17" fill="#F7F5EE" opacity="0.92" rx="3"/>
+<text x="555.0" y="458.0" font-family="Segoe UI, Arial, sans-serif" font-size="10.5" fill="#8C1D18" text-anchor="middle" font-weight="normal">callback driver</text>
+<line x1="290" y1="460" x2="420" y2="545" stroke="#20301C" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#ah)"/>
+<rect x="328.6" y="488.5" width="52.800000000000004" height="17" fill="#F7F5EE" opacity="0.92" rx="3"/>
+<text x="355.0" y="500.5" font-family="Segoe UI, Arial, sans-serif" font-size="10.5" fill="#20301C" text-anchor="middle" font-weight="normal">ghi log</text>
+<line x1="960" y1="545" x2="960" y2="425" stroke="#1F5C2E" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#ah)"/>
+<rect x="914.4" y="471.0" width="91.2" height="17" fill="#F7F5EE" opacity="0.92" rx="3"/>
+<text x="960.0" y="483.0" font-family="Segoe UI, Arial, sans-serif" font-size="10.5" fill="#1F5C2E" text-anchor="middle" font-weight="normal">gui telemetry</text>
+<line x1="712" y1="330" x2="770" y2="330" stroke="#8C1D18" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="721.0" y="316.0" width="40.0" height="17" fill="#F7F5EE" opacity="0.92" rx="3"/>
+<text x="741.0" y="328.0" font-family="Segoe UI, Arial, sans-serif" font-size="10.5" fill="#8C1D18" text-anchor="middle" font-weight="normal">HTTPS</text>
+<line x1="712" y1="420" x2="770" y2="390" stroke="#1F5C2E" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="714.6" y="391.0" width="52.800000000000004" height="17" fill="#F7F5EE" opacity="0.92" rx="3"/>
+<text x="741.0" y="403.0" font-family="Segoe UI, Arial, sans-serif" font-size="10.5" fill="#1F5C2E" text-anchor="middle" font-weight="normal">gui log</text>
+<line x1="165" y1="420" x2="165" y2="375" stroke="#20301C" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="151.4" y="383.5" width="27.200000000000003" height="17" fill="#F7F5EE" opacity="0.92" rx="3"/>
+<text x="165.0" y="395.5" font-family="Segoe UI, Arial, sans-serif" font-size="10.5" fill="#20301C" text-anchor="middle" font-weight="normal">run</text>
+<text x="40" y="700" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#20301C" text-anchor="start" font-weight="normal">Nhan xet: MiAV la mot bo EDR/AV hoan chinh. Viec giam sat 'lich su Internet' nam o lop user-mode (MiAV.exe + MiAV_Protect.exe),</text>
+<text x="40" y="718" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#20301C" text-anchor="start" font-weight="normal">khong nam o driver. Driver CBFSFilter chi theo doi hanh vi file/registry/tien trinh.</text>
+</svg>

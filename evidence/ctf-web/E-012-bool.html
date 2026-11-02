@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang=en>
+  <head>
+    <title>AttributeError: &#39;bool&#39; object has no attribute &#39;decode&#39;
+ // Werkzeug Debugger</title>
+    <link rel="stylesheet" href="?__debugger__=yes&amp;cmd=resource&amp;f=style.css">
+    <link rel="shortcut icon"
+        href="?__debugger__=yes&amp;cmd=resource&amp;f=console.png">
+    <script src="?__debugger__=yes&amp;cmd=resource&amp;f=debugger.js"></script>
+    <script>
+      var CONSOLE_MODE = false,
+          EVALEX = false,
+          EVALEX_TRUSTED = false,
+          SECRET = "yrm55mY34z8UsMhE1dww";
+    </script>
+  </head>
+  <body style="background-color: #fff">
+    <div class="debugger">
+<h1>AttributeError</h1>
+<div class="detail">
+  <p class="errormsg">AttributeError: &#39;bool&#39; object has no attribute &#39;decode&#39;
+</p>
+</div>
+<h2 class="traceback">Traceback <em>(most recent call last)</em></h2>
+<div class="traceback">
+  <h3></h3>
+  <ul><li><div class="frame" id="frame-132405582614416">
+  <h4>File <cite class="filename">"/usr/local/lib/python3.10/site-packages/flask/app.py"</cite>,
+      line <em class="line">1536</em>,
+      in <code class="function">__call__</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">    </span>) -&gt; cabc.Iterable[bytes]:</pre>
+<pre class="line before"><span class="ws">        </span>&#34;&#34;&#34;The WSGI server calls the Flask application object as the</pre>
+<pre class="line before"><span class="ws">        </span>WSGI application. This calls :meth:`wsgi_app`, which can be</pre>
+<pre class="line before"><span class="ws">        </span>wrapped to apply middleware.</pre>
+<pre class="line before"><span class="ws">        </span>&#34;&#34;&#34;</pre>
+<pre class="line current"><span class="ws">        </span>return self.wsgi_app(environ, start_response)</pre></div>
+</div>
+
+<li><div class="frame" id="frame-132405582614640">
+  <h4>File <cite class="filename">"/usr/local/lib/python3.10/site-packages/flask/app.py"</cite>,
+      line <em class="line">1514</em>,
+      in <code class="function">wsgi_app</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">            </span>try:</pre>
+<pre class="line before"><span class="ws">                </span>ctx.push()</pre>
+<pre class="line before"><span class="ws">                </span>response = self.full_dispatch_request()</pre>
+<pre class="line before"><span class="ws">            </span>except Exception as e:</pre>
+<pre class="line before"><span class="ws">                </span>error = e</pre>
+<pre class="line current"><span class="ws">                </span>response = self.handle_exception(e)</pre>
+<pre class="line after"><span class="ws">            </span>except:</pre>
+<pre class="line after"><span class="ws">                </span>error = sys.exc_info()[1]</pre>
+<pre class="line after"><span class="ws">                </span>raise</pre>
+<pre class="line after"><span class="ws">            </span>return response(environ, start_response)</pre>
+<pre class="line after"><span class="ws">        </span>finally:</pre></div>
+</div>
+
+<li><div class="frame" id="frame-132405582614752">
+  <h4>File <cite class="filename">"/usr/local/lib/python3.10/site-packages/flask/app.py"</cite>,
+      line <em class="line">1511</em>,
+      in <code class="function">wsgi_app</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">        </span>ctx = self.request_context(environ)</pre>
+<pre class="line before"><span class="ws">        </span>error: BaseException | None = None</pre>
+<pre class="line before"><span class="ws">        </span>try:</pre>
+<pre class="line before"><span class="ws">            </span>try:</pre>
+<pre class="line before"><span class="ws">                </span>ctx.push()</pre>
+<pre class="line current"><span class="ws">                </span>response = self.full_dispatch_request()</pre>
+<pre class="line after"><span class="ws">            </span>except Exception as e:</pre>
+<pre class="line after"><span class="ws">                </span>error = e</pre>
+<pre class="line after"><span class="ws">                </span>response = self.handle_exception(e)</pre>
+<pre class="line after"><span class="ws">            </span>except:</pre>
+<pre class="line after"><span class="ws">                </span>error = sys.exc_info()[1]</pre></div>
+</div>
+
+<li><div class="frame" id="frame-132405582614864">
+  <h4>File <cite class="filename">"/usr/local/lib/python3.10/site-packages/flask/app.py"</cite>,
+      line <em class="line">919</em>,
+      in <code class="function">full_dispatch_request</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">            </span>request_started.send(self, _async_wrapper=self.ensure_sync)</pre>
+<pre class="line before"><span class="ws">            </span>rv = self.preprocess_request()</pre>
+<pre class="line before"><span class="ws">            </span>if rv is None:</pre>
+<pre class="line before"><span class="ws">                </span>rv = self.dispatch_request()</pre>
+<pre class="line before"><span class="ws">        </span>except Exception as e:</pre>
+<pre class="line current"><span class="ws">            </span>rv = self.handle_user_exception(e)</pre>
+<pre class="line after"><span class="ws">        </span>return self.finalize_request(rv)</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">    </span>def finalize_request(</pre>
+<pre class="line after"><span class="ws">        </span>self,</pre>
+<pre class="line after"><span class="ws">        </span>rv: ft.ResponseReturnValue | HTTPException,</pre></div>
+</div>
+
+<li><div class="frame" id="frame-132405582614976">
+  <h4>File <cite class="filename">"/usr/local/lib/python3.10/site-packages/flask/app.py"</cite>,
+      line <em class="line">917</em>,
+      in <code class="function">full_dispatch_request</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws"></span> </pre>
+<pre class="line before"><span class="ws">        </span>try:</pre>
+<pre class="line before"><span class="ws">            </span>request_started.send(self, _async_wrapper=self.ensure_sync)</pre>
+<pre class="line before"><span class="ws">            </span>rv = self.preprocess_request()</pre>
+<pre class="line before"><span class="ws">            </span>if rv is None:</pre>
+<pre class="line current"><span class="ws">                </span>rv = self.dispatch_request()</pre>
+<pre class="line after"><span class="ws">        </span>except Exception as e:</pre>
+<pre class="line after"><span class="ws">            </span>rv = self.handle_user_exception(e)</pre>
+<pre class="line after"><span class="ws">        </span>return self.finalize_request(rv)</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">    </span>def finalize_request(</pre></div>
+</div>
+
+<li><div class="frame" id="frame-132405582615088">
+  <h4>File <cite class="filename">"/usr/local/lib/python3.10/site-packages/flask/app.py"</cite>,
+      line <em class="line">902</em>,
+      in <code class="function">dispatch_request</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">            </span>and req.method == &#34;OPTIONS&#34;</pre>
+<pre class="line before"><span class="ws">        </span>):</pre>
+<pre class="line before"><span class="ws">            </span>return self.make_default_options_response()</pre>
+<pre class="line before"><span class="ws">        </span># otherwise dispatch to the handler for that endpoint</pre>
+<pre class="line before"><span class="ws">        </span>view_args: dict[str, t.Any] = req.view_args  # type: ignore[assignment]</pre>
+<pre class="line current"><span class="ws">        </span>return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">    </span>def full_dispatch_request(self) -&gt; Response:</pre>
+<pre class="line after"><span class="ws">        </span>&#34;&#34;&#34;Dispatches the request and on top of that performs request</pre>
+<pre class="line after"><span class="ws">        </span>pre and postprocessing as well as HTTP exception catching and</pre>
+<pre class="line after"><span class="ws">        </span>error handling.</pre></div>
+</div>
+
+<li><div class="frame" id="frame-132405582615200">
+  <h4>File <cite class="filename">"/app/application/blueprints/routes.py"</cite>,
+      line <em class="line">16</em>,
+      in <code class="function">cache</code></h4>
+  <div class="source "><pre class="line before"><span class="ws"></span>@api.route(&#39;/cache&#39;, methods=[&#39;POST&#39;])</pre>
+<pre class="line before"><span class="ws"></span>def cache():</pre>
+<pre class="line before"><span class="ws">    </span>if not request.is_json or &#39;url&#39; not in request.json:</pre>
+<pre class="line before"><span class="ws">        </span>return abort(400)</pre>
+<pre class="line before"><span class="ws"></span> </pre>
+<pre class="line current"><span class="ws">    </span>return cache_web(request.json[&#39;url&#39;])</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws"></span># TODO: Boot up the selenium grid for the scraper we&#39;re working on</pre>
+<pre class="line after"><span class="ws"></span>@is_bot</pre>
+<pre class="line after"><span class="ws"></span>@api.route(&#39;/upload&#39;, methods=[&#39;POST&#39;])</pre>
+<pre class="line after"><span class="ws"></span>@is_from_localhost</pre></div>
+</div>
+
+<li><div class="frame" id="frame-132405582615312">
+  <h4>File <cite class="filename">"/app/application/util.py"</cite>,
+      line <em class="line">92</em>,
+      in <code class="function">cache_web</code></h4>
+  <div class="source "><pre class="line before"><span class="ws"></span>def is_domain_allowed(domain):</pre>
+<pre class="line before"><span class="ws">    </span># TODO: Unrestrict when we reach production stage</pre>
+<pre class="line before"><span class="ws">    </span>return domain in [&#39;google.com&#39;, &#39;amazon.com&#39;, &#39;twitter.com&#39;]</pre>
+<pre class="line before"><span class="ws"></span> </pre>
+<pre class="line before"><span class="ws"></span>def cache_web(url):</pre>
+<pre class="line current"><span class="ws">    </span>domain = urlparse(url).hostname</pre>
+<pre class="line after"><span class="ws">    </span>scheme = urlparse(url).scheme</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">    </span>if not domain or not scheme:</pre>
+<pre class="line after"><span class="ws">        </span>return flash(f&#39;Định dạng URL không hợp lệ {url}&#39;, &#39;danger&#39;)</pre>
+<pre class="line after"><span class="ws"></span> </pre></div>
+</div>
+
+<li><div class="frame" id="frame-132405582615424">
+  <h4>File <cite class="filename">"/usr/local/lib/python3.10/urllib/parse.py"</cite>,
+      line <em class="line">400</em>,
+      in <code class="function">urlparse</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">    </span>fragment component from the previous component, which can be either</pre>
+<pre class="line before"><span class="ws">    </span>path or query.</pre>
+<pre class="line before"><span class="ws"></span> </pre>
+<pre class="line before"><span class="ws">    </span>Note that % escapes are not expanded.</pre>
+<pre class="line before"><span class="ws">    </span>&#34;&#34;&#34;</pre>
+<pre class="line current"><span class="ws">    </span>url, scheme, _coerce_result = _coerce_args(url, scheme)</pre>
+<pre class="line after"><span class="ws">    </span>splitresult = urlsplit(url, scheme, allow_fragments)</pre>
+<pre class="line after"><span class="ws">    </span>scheme, netloc, url, query, fragment = splitresult</pre>
+<pre class="line after"><span class="ws">    </span>if scheme in uses_params and &#39;;&#39; in url:</pre>
+<pre class="line after"><span class="ws">        </span>url, params = _splitparams(url)</pre>
+<pre class="line after"><span class="ws">    </span>else:</pre></div>
+</div>
+
+<li><div class="frame" id="frame-132405582615536">
+  <h4>File <cite class="filename">"/usr/local/lib/python3.10/urllib/parse.py"</cite>,
+      line <em class="line">137</em>,
+      in <code class="function">_coerce_args</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">        </span># &#34;scheme=&#39;&#39;&#34; default argument to some functions</pre>
+<pre class="line before"><span class="ws">        </span>if arg and isinstance(arg, str) != str_input:</pre>
+<pre class="line before"><span class="ws">            </span>raise TypeError(&#34;Cannot mix str and non-str arguments&#34;)</pre>
+<pre class="line before"><span class="ws">    </span>if str_input:</pre>
+<pre class="line before"><span class="ws">        </span>return args + (_noop,)</pre>
+<pre class="line current"><span class="ws">    </span>return _decode_args(args) + (_encode_result,)</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws"></span># Result objects are more helpful than simple tuples</pre>
+<pre class="line after"><span class="ws"></span>class _ResultMixinStr(object):</pre>
+<pre class="line after"><span class="ws">    </span>&#34;&#34;&#34;Standard approach to encoding parsed results from str to bytes&#34;&#34;&#34;</pre>
+<pre class="line after"><span class="ws">    </span>__slots__ = ()</pre></div>
+</div>
+
+<li><div class="frame" id="frame-132405582615648">
+  <h4>File <cite class="filename">"/usr/local/lib/python3.10/urllib/parse.py"</cite>,
+      line <em class="line">121</em>,
+      in <code class="function">_decode_args</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">                        </span>errors=_implicit_errors):</pre>
+<pre class="line before"><span class="ws">    </span>return obj.encode(encoding, errors)</pre>
+<pre class="line before"><span class="ws"></span> </pre>
+<pre class="line before"><span class="ws"></span>def _decode_args(args, encoding=_implicit_encoding,</pre>
+<pre class="line before"><span class="ws">                       </span>errors=_implicit_errors):</pre>
+<pre class="line current"><span class="ws">    </span>return tuple(x.decode(encoding, errors) if x else &#39;&#39; for x in args)</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws"></span>def _coerce_args(*args):</pre>
+<pre class="line after"><span class="ws">    </span># Invokes decode if necessary to create str args</pre>
+<pre class="line after"><span class="ws">    </span># and returns the coerced inputs along with</pre>
+<pre class="line after"><span class="ws">    </span># an appropriate result coercion function</pre></div>
+</div>
+
+<li><div class="frame" id="frame-132405582615760">
+  <h4>File <cite class="filename">"/usr/local/lib/python3.10/urllib/parse.py"</cite>,
+      line <em class="line">121</em>,
+      in <code class="function">&lt;genexpr&gt;</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">                        </span>errors=_implicit_errors):</pre>
+<pre class="line before"><span class="ws">    </span>return obj.encode(encoding, errors)</pre>
+<pre class="line before"><span class="ws"></span> </pre>
+<pre class="line before"><span class="ws"></span>def _decode_args(args, encoding=_implicit_encoding,</pre>
+<pre class="line before"><span class="ws">                       </span>errors=_implicit_errors):</pre>
+<pre class="line current"><span class="ws">    </span>return tuple(x.decode(encoding, errors) if x else &#39;&#39; for x in args)</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws"></span>def _coerce_args(*args):</pre>
+<pre class="line after"><span class="ws">    </span># Invokes decode if necessary to create str args</pre>
+<pre class="line after"><span class="ws">    </span># and returns the coerced inputs along with</pre>
+<pre class="line after"><span class="ws">    </span># an appropriate result coercion function</pre></div>
+</div>
+</ul>
+  <blockquote>AttributeError: &#39;bool&#39; object has no attribute &#39;decode&#39;
+</blockquote>
+</div>
+
+<div class="plain">
+    <p>
+      This is the Copy/Paste friendly version of the traceback.
+    </p>
+    <textarea cols="50" rows="10" name="code" readonly>Traceback (most recent call last):
+  File &#34;/usr/local/lib/python3.10/site-packages/flask/app.py&#34;, line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+  File &#34;/usr/local/lib/python3.10/site-packages/flask/app.py&#34;, line 1514, in wsgi_app
+    response = self.handle_exception(e)
+  File &#34;/usr/local/lib/python3.10/site-packages/flask/app.py&#34;, line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File &#34;/usr/local/lib/python3.10/site-packages/flask/app.py&#34;, line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File &#34;/usr/local/lib/python3.10/site-packages/flask/app.py&#34;, line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File &#34;/usr/local/lib/python3.10/site-packages/flask/app.py&#34;, line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File &#34;/app/application/blueprints/routes.py&#34;, line 16, in cache
+    return cache_web(request.json[&#39;url&#39;])
+  File &#34;/app/application/util.py&#34;, line 92, in cache_web
+    domain = urlparse(url).hostname
+  File &#34;/usr/local/lib/python3.10/urllib/parse.py&#34;, line 400, in urlparse
+    url, scheme, _coerce_result = _coerce_args(url, scheme)
+  File &#34;/usr/local/lib/python3.10/urllib/parse.py&#34;, line 137, in _coerce_args
+    return _decode_args(args) + (_encode_result,)
+  File &#34;/usr/local/lib/python3.10/urllib/parse.py&#34;, line 121, in _decode_args
+    return tuple(x.decode(encoding, errors) if x else &#39;&#39; for x in args)
+  File &#34;/usr/local/lib/python3.10/urllib/parse.py&#34;, line 121, in &lt;genexpr&gt;
+    return tuple(x.decode(encoding, errors) if x else &#39;&#39; for x in args)
+AttributeError: &#39;bool&#39; object has no attribute &#39;decode&#39;
+</textarea>
+</div>
+<div class="explanation">
+  The debugger caught an exception in your WSGI application.  You can now
+  look at the traceback which led to the error.  <span class="nojavascript">
+  If you enable JavaScript you can also use additional features such as code
+  execution (if the evalex feature is enabled), automatic pasting of the
+  exceptions and much more.</span>
+</div>
+      <div class="footer">
+        Brought to you by <strong class="arthur">DON'T PANIC</strong>, your
+        friendly Werkzeug powered traceback interpreter.
+      </div>
+    </div>
+
+    <div class="pin-prompt">
+      <div class="inner">
+        <h3>Console Locked</h3>
+        <p>
+          The console is locked and needs to be unlocked by entering the PIN.
+          You can find the PIN printed out on the standard output of your
+          shell that runs the server.
+        <form>
+          <p>PIN:
+            <input type=text name=pin size=14>
+            <input type=submit name=btn value="Confirm Pin">
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
+
+<!--
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/flask/app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+  File "/usr/local/lib/python3.10/site-packages/flask/app.py", line 1514, in wsgi_app
+    response = self.handle_exception(e)
+  File "/usr/local/lib/python3.10/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/usr/local/lib/python3.10/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/usr/local/lib/python3.10/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/usr/local/lib/python3.10/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/app/application/blueprints/routes.py", line 16, in cache
+    return cache_web(request.json['url'])
+  File "/app/application/util.py", line 92, in cache_web
+    domain = urlparse(url).hostname
+  File "/usr/local/lib/python3.10/urllib/parse.py", line 400, in urlparse
+    url, scheme, _coerce_result = _coerce_args(url, scheme)
+  File "/usr/local/lib/python3.10/urllib/parse.py", line 137, in _coerce_args
+    return _decode_args(args) + (_encode_result,)
+  File "/usr/local/lib/python3.10/urllib/parse.py", line 121, in _decode_args
+    return tuple(x.decode(encoding, errors) if x else '' for x in args)
+  File "/usr/local/lib/python3.10/urllib/parse.py", line 121, in <genexpr>
+    return tuple(x.decode(encoding, errors) if x else '' for x in args)
+AttributeError: 'bool' object has no attribute 'decode'
+
+
+-->

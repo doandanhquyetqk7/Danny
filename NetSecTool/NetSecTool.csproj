@@ -1,0 +1,75 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>QDND.ico</ApplicationIcon>
+    <AssemblyName>Danny</AssemblyName>
+    <RootNamespace>NetSecTool</RootNamespace>
+    <Product>Danny ver5.0 - Trợ lý Công nghệ Thông tin</Product>
+    <AssemblyTitle>Danny ver5.0 - Trợ lý Công nghệ Thông tin</AssemblyTitle>
+    <Company>Bộ Chỉ huy Quân sự tỉnh Lâm Đồng</Company>
+    <Version>5.0.0</Version>
+    <FileVersion>5.0.0.0</FileVersion>
+    <AssemblyVersion>5.0.0.0</AssemblyVersion>
+    <Description>Trợ lý Công nghệ Thông tin - Trung tá Đoàn Danh Quyết</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Logo: embed de ban single-file van hoat dong -->
+    <EmbeddedResource Include="Resources\logo.png">
+      <LogicalName>NetSecTool.Resources.logo.png</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Management" Version="8.0.0" />
+  </ItemGroup>
+
+  <!--
+    KVRT.exe (Kaspersky offline ~114 MB) KHONG embed - dat rieng trong thu muc
+    "tools/" de ban phan phoi nhe hon. Neu file khong tim thay, chuc nang nay
+    se bao loi ro rang thay vi lam app cham.
+
+    ExcludeFromSingleFile=true: bat buoc, neu khong co thi .NET van nhung
+    file nay vao bundle single-file va exe se nang tro lai.
+  -->
+  <ItemGroup>
+    <None Include="Resources\KVRT.exe" Link="tools\KVRT.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </None>
+  </ItemGroup>
+
+  <!--
+    SetupMiAV.exe (trinh cai dat MiAV 4.1.1.2 cua BTL86, ~21 MB) cung KHONG
+    embed - dat rieng trong thu muc "tools/" de ban phan phoi nhe hon va de
+    cap nhat duoc khi BTL86 phat hanh phien ban moi.
+
+    Buoc cuoi cung cua chuc nang "Lam sach PC mot cham" se chay trinh cai dat
+    nay o che do /VERYSILENT de tao lai 4 service MiAV.
+  -->
+  <ItemGroup>
+    <None Include="Resources\SetupMiAV.exe" Link="tools\SetupMiAV.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="TestForm1" />
+    <InternalsVisibleTo Include="TestBox" />
+    <InternalsVisibleTo Include="ShotV3" />
+    <InternalsVisibleTo Include="TestIme" />
+    <InternalsVisibleTo Include="TestMouseReal" />
+    <InternalsVisibleTo Include="TestImeUnicode" />
+    <InternalsVisibleTo Include="TestShotFinal" />
+    <InternalsVisibleTo Include="ShotClean" />
+  </ItemGroup>
+</Project>
