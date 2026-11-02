@@ -63,6 +63,16 @@ namespace NetSecTool
         CancellationTokenSource? ctsClean;
         bool cleanRunning;
 
+        // --- Ho tro ky thuat tu xa (UltraVNC) ---
+        Button rdoRemoteReceive = null!, rdoRemoteAssist = null!;
+        TextBox txtRemoteTechIp, txtRemoteListenPort;
+        Label lblRemoteStatus = null!, lblRemoteLocalIp = null!, lblRemoteHint = null!;
+        RichTextBox txtRemoteLog;
+        ProgressBar barRemote;
+        Button btnRemotePrepare, btnRemoteStop, btnRemoteProbe, btnRemoteCopyIp;
+        CheckBox chkRemoteDsm, chkRemoteService, chkRemoteShortcut;
+        ComboBox cmbRemoteAdapter;
+
         public Form1()
         {
             InitializeComponent();
@@ -75,7 +85,7 @@ namespace NetSecTool
 
         private void SetupUI()
         {
-            this.Text = "DANNY ver5.0 - Trợ lý Công nghệ Thông tin";
+            this.Text = "DANNY ver5.5 - Trợ lý Công nghệ Thông tin";
             this.Size = new Size(1000, 800);
             this.MinimumSize = new Size(880, 640);
             this.StartPosition = FormStartPosition.CenterScreen;
@@ -201,7 +211,7 @@ namespace NetSecTool
             };
             Label lblVer = new Label
             {
-                Text = "ver5.0",
+                Text = "ver5.5",
                 ForeColor = ClrDarkGreen,
                 BackColor = ClrGold,
                 Font = new Font("Segoe UI", 9f, FontStyle.Bold),
@@ -286,6 +296,12 @@ namespace NetSecTool
                 Font = new Font("Segoe UI", 9f),
                 Padding = new Padding(10)
             };
+            var tabRemote = new TabPage("  HỖ TRỢ KỸ THUẬT TỪ XA  ")
+            {
+                BackColor = ClrBg,
+                Font = new Font("Segoe UI", 9f),
+                Padding = new Padding(10)
+            };
 
             // An bang goi y cua o tim kiem khi nguoi dung doi tab
             tabs.SelectedIndexChanged += (s, e) =>
@@ -299,6 +315,7 @@ namespace NetSecTool
             tabs.TabPages.Add(tabOneClick);
             tabs.TabPages.Add(tabNet);
             tabs.TabPages.Add(tabClean);
+            tabs.TabPages.Add(tabRemote);
             tabs.TabPages.Add(tabTools);
 
             BuildDiagTab(tabDiag);
@@ -306,6 +323,7 @@ namespace NetSecTool
             BuildOneClickTab(tabOneClick);
             BuildNetTab(tabNet);
             BuildCleanTab(tabClean);
+            BuildRemoteTab(tabRemote);
             BuildToolsTab(tabTools);
 
             return tabs;
@@ -1531,6 +1549,732 @@ namespace NetSecTool
                 Margin = Padding.Empty
             };
             layout.Controls.Add(info, 0, 1);
+        }
+
+        // ==================================================================
+        // TAB 7: HO TRO KY THUAT TU XA (UltraVNC)
+        // ==================================================================
+
+        private void BuildRemoteTab(TabPage tab)
+        {
+            // 5 hang: chon che do / thong tin / progress / log / nut
+            var layout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 5,
+                Margin = Padding.Empty,
+                Padding = Padding.Empty
+            };
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 176));  // 0 - chon che do
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 62));   // 1 - thong tin
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 18));   // 2 - progress
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // 3 - log
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));   // 4 - nut
+            tab.Controls.Add(layout);
+
+            layout.Controls.Add(BuildRemoteModePanel(), 0, 0);
+            layout.Controls.Add(BuildRemoteInfoPanel(), 0, 1);
+
+            barRemote = new ProgressBar
+            {
+                Dock = DockStyle.Fill,
+                Style = ProgressBarStyle.Continuous,
+                ForeColor = ClrMidGreen,
+                Margin = Padding.Empty
+            };
+            layout.Controls.Add(barRemote, 0, 2);
+
+            txtRemoteLog = new RichTextBox
+            {
+                Dock = DockStyle.Fill,
+                BackColor = ClrLogBg,
+                ForeColor = ClrLogText,
+                BorderStyle = BorderStyle.FixedSingle,
+                Font = new Font("Consolas", 9f),
+                ReadOnly = true,
+                WordWrap = false,
+                ScrollBars = RichTextBoxScrollBars.Both,
+                Margin = new Padding(0, 4, 0, 4)
+            };
+            layout.Controls.Add(txtRemoteLog, 0, 3);
+
+            // --- Hang nut ---
+            var pnlBtns = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 3,
+                RowCount = 1,
+                Margin = Padding.Empty,
+                Padding = new Padding(0, 6, 0, 0)
+            };
+            pnlBtns.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            pnlBtns.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            pnlBtns.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
+            pnlBtns.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+            btnRemotePrepare = MakeButton("CHUẨN BỊ KẾT NỐI", 0, 0, 320, 38, ClrRed);
+            btnRemotePrepare.Click += BtnRemotePrepare_Click;
+            btnRemotePrepare.Dock = DockStyle.Fill;
+            btnRemotePrepare.Margin = new Padding(0, 0, 4, 0);
+            pnlBtns.Controls.Add(btnRemotePrepare, 0, 0);
+
+            btnRemoteStop = MakeButton("DỪNG / DọN DẸP", 0, 0, 320, 38, ClrDarkGold);
+            btnRemoteStop.Click += BtnRemoteStop_Click;
+            btnRemoteStop.Dock = DockStyle.Fill;
+            btnRemoteStop.Margin = new Padding(4, 0, 0, 0);
+            pnlBtns.Controls.Add(btnRemoteStop, 1, 0);
+
+            var btnHelpRemote = MakeButton("Hướng dẫn nhanh", 0, 0, 180, 38, ClrMidGreen);
+            btnHelpRemote.Click += (s, e) => ShowRemoteHelp();
+            btnHelpRemote.Dock = DockStyle.Fill;
+            btnHelpRemote.Margin = new Padding(4, 0, 0, 0);
+            pnlBtns.Controls.Add(btnHelpRemote, 2, 0);
+
+            layout.Controls.Add(pnlBtns, 0, 4);
+
+            // Khoi dong cap nhat trang thai ban dau
+            SelectRemoteRole(true);
+            RemoteLog("Sẵn sàng. Chọn vai trò của máy này rồi bấm \"CHUẨN BỊ KẾT NỐI\".",
+                RemoteLogKind.Step);
+            RefreshRemoteStatus();
+        }
+
+        /// <summary>Hang 0: chọn vai trò máy + tuỳ chọn chuẩn bị.</summary>
+        private Control BuildRemoteModePanel()
+        {
+            var tbl = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 4,
+                BackColor = ClrPanel,
+                Padding = new Padding(12, 6, 12, 6),
+                Margin = Padding.Empty
+            };
+            tbl.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 52));
+            tbl.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 48));
+            tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));   // 0 - tieu de
+            tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));   // 1 - chon che do
+            tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));   // 2 - tham so
+            tbl.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // 3 - tuy chon
+
+            var lblTitle = new Label
+            {
+                Text = "VAI TRÒ MÁY NÀY TRONG PHIÊN HỖ TRỢ TỪ XA",
+                ForeColor = ClrMidGreen,
+                Font = new Font("Segoe UI", 10.5f, FontStyle.Bold),
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleLeft,
+                AutoSize = false,
+                Margin = Padding.Empty
+            };
+            tbl.Controls.Add(lblTitle, 0, 0);
+            tbl.SetColumnSpan(lblTitle, 2);
+
+            // --- Chon che do ---
+            // Dung Button (khong phai RadioButton) de tu kiem soat hoan toan
+            // mau nen + mau chu. RadioButton co Appearance=Button se bi Windows
+            // ve lai bang mau highlight cua he thong (xanh la sang) lam chu
+            // trang bi mat, doc ky.
+            var pnlMode = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 1,
+                Margin = Padding.Empty
+            };
+            pnlMode.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            pnlMode.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            pnlMode.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+            rdoRemoteReceive = MakeButton("MÁY NHẬN KẾT NỐI  (máy kỹ thuật viên)",
+                0, 0, 300, 28, ClrDarkGreen);
+            rdoRemoteReceive.Font = new Font("Segoe UI", 9f, FontStyle.Bold);
+            rdoRemoteReceive.ForeColor = Color.White;
+            rdoRemoteReceive.Click += (s, e) => SelectRemoteRole(true);
+            rdoRemoteReceive.Dock = DockStyle.Fill;
+            rdoRemoteReceive.Margin = new Padding(0, 2, 4, 2);
+            pnlMode.Controls.Add(rdoRemoteReceive, 0, 0);
+
+            rdoRemoteAssist = MakeButton("MÁY CẦN HỖ TRỢ  (máy quân sự)",
+                0, 0, 300, 28, ClrDarkGreen);
+            rdoRemoteAssist.Font = new Font("Segoe UI", 9f, FontStyle.Bold);
+            rdoRemoteAssist.ForeColor = Color.White;
+            rdoRemoteAssist.Click += (s, e) => SelectRemoteRole(false);
+            rdoRemoteAssist.Dock = DockStyle.Fill;
+            rdoRemoteAssist.Margin = new Padding(4, 2, 0, 2);
+            pnlMode.Controls.Add(rdoRemoteAssist, 1, 0);
+
+            tbl.Controls.Add(pnlMode, 0, 1);
+            tbl.SetColumnSpan(pnlMode, 2);
+
+            // --- Tham so ---
+            var pnlParam = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 4,
+                RowCount = 1,
+                Margin = Padding.Empty
+            };
+            pnlParam.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
+            pnlParam.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            pnlParam.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
+            pnlParam.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
+            pnlParam.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+            pnlParam.Controls.Add(MakeLabel("IP máy kỹ thuật viên:", 0, 8), 0, 0);
+            txtRemoteTechIp = new TextBox
+            {
+                Text = "",
+                Dock = DockStyle.Fill,
+                BorderStyle = BorderStyle.FixedSingle,
+                Font = new Font("Consolas", 9.5f),
+                Margin = new Padding(0, 6, 8, 6)
+            };
+            pnlParam.Controls.Add(txtRemoteTechIp, 1, 0);
+
+            pnlParam.Controls.Add(MakeLabel("Cổng Listen:", 0, 8), 2, 0);
+            txtRemoteListenPort = new TextBox
+            {
+                Text = RemoteSupport.DefaultListenPort.ToString(),
+                Dock = DockStyle.Fill,
+                BorderStyle = BorderStyle.FixedSingle,
+                Font = new Font("Consolas", 9.5f),
+                Margin = new Padding(0, 6, 8, 6)
+            };
+            pnlParam.Controls.Add(txtRemoteListenPort, 3, 0);
+
+            tbl.Controls.Add(pnlParam, 0, 2);
+            tbl.SetColumnSpan(pnlParam, 2);
+
+            // --- Tuỳ chọn ---
+            var pnlOpts = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 3,
+                RowCount = 1,
+                Margin = Padding.Empty
+            };
+            pnlOpts.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40));
+            pnlOpts.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40));
+            pnlOpts.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20));
+            pnlOpts.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+            chkRemoteDsm = new CheckBox
+            {
+                Text = "Bật mã hoá DSM (SecureVNC)",
+                Checked = true,
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 9f),
+                Margin = new Padding(0, 6, 0, 0)
+            };
+            pnlOpts.Controls.Add(chkRemoteDsm, 0, 0);
+
+            chkRemoteService = new CheckBox
+            {
+                Text = "Cài WinVNC thành service",
+                Checked = true,
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 9f),
+                Margin = new Padding(0, 6, 0, 0)
+            };
+            pnlOpts.Controls.Add(chkRemoteService, 1, 0);
+
+            chkRemoteShortcut = new CheckBox
+            {
+                Text = "Tạo shortcut trên Desktop",
+                Checked = true,
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 9f),
+                Margin = new Padding(0, 6, 0, 0)
+            };
+            pnlOpts.Controls.Add(chkRemoteShortcut, 2, 0);
+
+            tbl.Controls.Add(pnlOpts, 0, 3);
+            tbl.SetColumnSpan(pnlOpts, 2);
+
+            return tbl;
+        }
+
+        /// <summary>Hang 1: thông tin trạng thái môi trường + IP của máy này.</summary>
+        private Control BuildRemoteInfoPanel()
+        {
+            var tbl = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 4,
+                RowCount = 2,
+                BackColor = Color.FromArgb(240, 243, 238),
+                Padding = new Padding(12, 4, 12, 4),
+                Margin = Padding.Empty
+            };
+            tbl.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130));
+            tbl.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            tbl.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130));
+            tbl.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+            tbl.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            tbl.Controls.Add(MakeLabel("Trạng thái:", 0, 4), 0, 0);
+            lblRemoteStatus = new Label
+            {
+                Text = "Chưa kiểm tra.",
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Font = new Font("Segoe UI", 9f, FontStyle.Bold),
+                ForeColor = ClrMuted,
+                AutoSize = false,
+                Margin = Padding.Empty
+            };
+            tbl.Controls.Add(lblRemoteStatus, 1, 0);
+
+            tbl.Controls.Add(MakeLabel("IP máy này (LAN):", 0, 4), 2, 0);
+            var pnlIp = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 1,
+                Margin = Padding.Empty
+            };
+            pnlIp.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            pnlIp.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 96));
+            pnlIp.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+            lblRemoteLocalIp = new Label
+            {
+                Text = "—",
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Font = new Font("Consolas", 9f, FontStyle.Bold),
+                ForeColor = ClrDarkGreen,
+                AutoSize = false,
+                Margin = Padding.Empty
+            };
+            pnlIp.Controls.Add(lblRemoteLocalIp, 0, 0);
+
+            btnRemoteCopyIp = MakeButton("Chép IP", 0, 0, 90, 24, ClrMidGreen);
+            btnRemoteCopyIp.Font = new Font("Segoe UI", 8.5f, FontStyle.Bold);
+            btnRemoteCopyIp.Click += BtnRemoteCopyIp_Click;
+            btnRemoteCopyIp.Dock = DockStyle.Fill;
+            btnRemoteCopyIp.Margin = new Padding(4, 0, 0, 0);
+            pnlIp.Controls.Add(btnRemoteCopyIp, 1, 0);
+
+            tbl.Controls.Add(pnlIp, 3, 0);
+
+            lblRemoteHint = new Label
+            {
+                Text = "",
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Font = new Font("Segoe UI", 8.5f),
+                ForeColor = ClrMuted,
+                AutoSize = false,
+                Margin = Padding.Empty
+            };
+            tbl.Controls.Add(lblRemoteHint, 0, 1);
+            tbl.SetColumnSpan(lblRemoteHint, 4);
+
+            return tbl;
+        }
+
+        // ==================================================================
+        //  HO TRO KY THUAT TU XA - XU LY SU KIEN
+        // ==================================================================
+
+        private enum RemoteLogKind { Info, Success, Warn, Error, Step, Heading }
+
+        private void RemoteLog(string message, RemoteLogKind kind = RemoteLogKind.Info)
+        {
+            if (txtRemoteLog == null) return;
+
+            string stamp = DateTime.Now.ToString("HH:mm:ss");
+            Color color = kind switch
+            {
+                RemoteLogKind.Success => Color.FromArgb(120, 235, 130),
+                RemoteLogKind.Warn => ClrLogGold,
+                RemoteLogKind.Error => ClrLogRed,
+                RemoteLogKind.Step => ClrLogBlue,
+                RemoteLogKind.Heading => ClrLogGold,
+                _ => ClrLogText
+            };
+            string prefix = kind switch
+            {
+                RemoteLogKind.Success => "[ OK ] ",
+                RemoteLogKind.Warn => "[CẢNH BÁO] ",
+                RemoteLogKind.Error => "[LỖI]  ",
+                RemoteLogKind.Step => "[...]  ",
+                RemoteLogKind.Heading => "== ",
+                _ => "       "
+            };
+
+            txtRemoteLog.SelectionStart = txtRemoteLog.TextLength;
+            txtRemoteLog.SelectionLength = 0;
+            txtRemoteLog.SelectionColor = Color.FromArgb(90, 130, 100);
+            txtRemoteLog.AppendText(stamp + "  ");
+            txtRemoteLog.SelectionColor = color;
+            if (kind == RemoteLogKind.Heading)
+                txtRemoteLog.AppendText("--------------------------------------------------\n");
+            txtRemoteLog.AppendText(prefix + message + "\n");
+            txtRemoteLog.SelectionStart = txtRemoteLog.TextLength;
+            txtRemoteLog.ScrollToCaret();
+        }
+
+        /// <summary>Vai trò đang chọn: true = máy nhận kết nối, false = máy cần hỗ trợ.</summary>
+        private bool remoteIsReceiver = true;
+
+        /// <summary>Chọn vai trò của máy này và cập nhật giao diện.</summary>
+        private void SelectRemoteRole(bool isReceiver)
+        {
+            remoteIsReceiver = isReceiver;
+            OnRemoteModeChanged();
+        }
+
+        /// <summary>Cập nhật giao diện theo vai trò đang chọn.</summary>
+        private void OnRemoteModeChanged()
+        {
+            if (rdoRemoteReceive == null || rdoRemoteAssist == null) return;
+
+            bool isReceive = remoteIsReceiver;
+
+            // Nut dang chon: nen xanh la cay vua + chu vang (chu trang bi
+            // mat tren nen sang cua he thong).
+            rdoRemoteReceive.BackColor = isReceive ? ClrMidGreen : ClrDarkGreen;
+            rdoRemoteReceive.ForeColor = isReceive ? ClrGold : Color.White;
+            rdoRemoteAssist.BackColor = !isReceive ? ClrMidGreen : ClrDarkGreen;
+            rdoRemoteAssist.ForeColor = !isReceive ? ClrGold : Color.White;
+
+            // Vi tri dau thu tu: them mot ky tu ">> " vao nut dang chon de
+            // nguoi dung phan biet ngay du khi mau nen tuong phan.
+            rdoRemoteReceive.Text = (isReceive ? ">>  " : "     ")
+                + "MÁY NHẬN KẾT NỐI  (máy kỹ thuật viên)";
+            rdoRemoteAssist.Text = (!isReceive ? ">>  " : "     ")
+                + "MÁY CẦN HỖ TRỢ  (máy quân sự)";
+
+            // Tham so: chi "IP máy KT viên" co y nghia o che do may can ho tro
+            lblRemoteHint.Text = isReceive
+                ? "Máy này chờ khách gàng kết nối tới. Chạy 'CHUẨN BỊ KẾT NỐI' để mở cổng firewall, "
+                + "tạo shortcut và khởi chạy UltraVNC Viewer ở chế độ lắng nghe. "
+                + "Sau đó báo cho người dùng IP LAN của máy này (ô bên phải) để họ nhập."
+                : "Máy này cần được hỗ trợ từ xa. Nhập IP máy kỹ thuật viên vào ô bên trái, "
+                + "bấm 'CHUẨN BỊ KẾT NỐI' để cài service WinVNC và mở kết nối ngược.";
+
+            txtRemoteTechIp.Enabled = !isReceive;
+            chkRemoteShortcut.Enabled = isReceive;
+            chkRemoteService.Enabled = !isReceive;
+
+            RefreshRemoteStatus();
+        }
+
+        /// <summary>Dò lại môi trường và hiển thị trạng thái.</summary>
+        private void RefreshRemoteStatus()
+        {
+            if (lblRemoteStatus == null) return;
+
+            int port = GetRemotePort();
+            var probe = RemoteSupport.RunProbe(port);
+
+            var parts = new List<string>();
+            parts.Add(probe.ViewerFound ? "UltraVNC: OK" : "UltraVNC: THIẾU");
+            parts.Add(probe.DsmPluginFound
+                ? "Mã hoá DSM: OK"
+                : "Mã hoá DSM: KHÔNG");
+            parts.Add(probe.IsAdministrator ? "Quyền Admin: OK" : "Quyền Admin: THIẾU");
+            parts.Add(probe.ServiceInstalled
+                ? (probe.ServiceRunning ? "Service WinVNC: chạy" : "Service WinVNC: dừng")
+                : "Service WinVNC: chưa cài");
+
+            lblRemoteStatus.Text = string.Join("  |  ", parts);
+            lblRemoteStatus.ForeColor = probe.Ready ? ClrDarkGreen : ClrRed;
+
+            lblRemoteLocalIp.Text = probe.LocalIPv4List.Length > 0
+                ? probe.LocalIPv4List
+                : "(không có IP LAN — kiểm tra kết nối mạng)";
+
+            if (probe.PortListening)
+            {
+                lblRemoteStatus.Text += $"  |  Cổng {port}: ĐANG LẮNG NGHE";
+            }
+        }
+
+        /// <summary>Lấy cổng Listen do người dùng nhập, kiểm tra tính hợp lệ.</summary>
+        private int GetRemotePort()
+        {
+            if (txtRemoteListenPort != null
+                && int.TryParse(txtRemoteListenPort.Text.Trim(), out int p)
+                && p >= 1 && p <= 65535)
+                return p;
+            return RemoteSupport.DefaultListenPort;
+        }
+
+        /// <summary>
+        ///  Nút chính: tự động hoá toàn bộ các bước còn lại theo vai trò đã chọn.
+        /// </summary>
+        private void BtnRemotePrepare_Click(object? sender, EventArgs e)
+        {
+            btnRemotePrepare.Enabled = false;
+            btnRemoteStop.Enabled = true;
+            barRemote.Style = ProgressBarStyle.Marquee;
+            barRemote.MarqueeAnimationSpeed = 30;
+
+            try
+            {
+                bool isReceive = remoteIsReceiver;
+
+                RemoteLog(isReceive
+                    ? "=== CHUẨN BỊ: MÁY NHẬN KẾT NỐI (chờ khách gàng gọi tới) ==="
+                    : "=== CHUẨN BỊ: MÁY CẦN HỖ TRỢ (mở kết nối ngược) ===",
+                    RemoteLogKind.Heading);
+
+                // 0) Kiểm tra công cụ
+                var (viewer, server) = RemoteSupport.LocateExecutables();
+                if (viewer == null || server == null)
+                {
+                    RemoteLog("Không tìm thấy bộ công cụ UltraVNC trong thư mục tools\\UltraVNC.",
+                        RemoteLogKind.Error);
+                    MessageBox.Show(this,
+                        "Không tìm thấy vncviewer.exe / winvnc.exe trong:\n" +
+                        Path.Combine(AppContext.BaseDirectory, "tools", "UltraVNC") +
+                        "\n\nHãy chép lại đầy đủ thư mục tools\\UltraVNC từ bộ cài Danny.",
+                        "Thiếu công cụ UltraVNC", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                RemoteLog("Đã tìm thấy bộ công cụ UltraVNC.", RemoteLogKind.Success);
+
+                string uvncDir = Path.GetDirectoryName(viewer)!;
+                string? dsm = chkRemoteDsm.Checked ? RemoteSupport.LocateDsmPlugin(uvncDir) : null;
+                if (chkRemoteDsm.Checked)
+                {
+                    if (dsm != null)
+                        RemoteLog("Plugin mã hoá: " + Path.GetFileName(dsm), RemoteLogKind.Success);
+                    else
+                        RemoteLog("Không có plugin DSM — phiên kết nối sẽ KHÔNG ĐƯỢC MÃ HOÁ. "
+                                + "Nên chép thêm SecureVNCPlugin64.dsm vào thư mục tools\\UltraVNC.",
+                            RemoteLogKind.Warn);
+                }
+
+                int port = GetRemotePort();
+
+                if (isReceive)
+                {
+                    PrepareAsReceiver(viewer, uvncDir, dsm, port);
+                }
+                else
+                {
+                    PrepareAsAssisted(server, uvncDir, dsm, port);
+                }
+            }
+            catch (Exception ex)
+            {
+                RemoteLog("Lỗi không mong đợi: " + ex.Message, RemoteLogKind.Error);
+                MessageBox.Show(this, ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                barRemote.Style = ProgressBarStyle.Continuous;
+                barRemote.Value = 100;
+                btnRemotePrepare.Enabled = true;
+                btnRemoteStop.Enabled = false;
+                RefreshRemoteStatus();
+            }
+        }
+
+        /// <summary>Máy nhận kết nối: mở firewall + cấu hình + shortcut + chạy Viewer listen.</summary>
+        private void PrepareAsReceiver(string viewer, string uvncDir, string? dsm, int port)
+        {
+            // Buoc 1 - Firewall
+            RemoteLog("Buoc 1/4: Mo cong TCP " + port + " trong Windows Defender Firewall...",
+                RemoteLogKind.Step);
+            var fw = RemoteSupport.OpenFirewallPort(port);
+            LogAction(fw);
+
+            // Buoc 2 - ultravnc.ini
+            RemoteLog("Buoc 2/4: Cap nhat ultravnc.ini...", RemoteLogKind.Step);
+            var ini = RemoteSupport.WriteIni(uvncDir, dsm, port);
+            LogAction(ini);
+
+            // Buoc 3 - Shortcut
+            if (chkRemoteShortcut.Checked)
+            {
+                RemoteLog("Buoc 3/4: Tao shortcut UltraVNC tren Desktop...", RemoteLogKind.Step);
+                var lnk = RemoteSupport.CreateListenShortcut(viewer, port, dsm);
+                LogAction(lnk);
+            }
+            else
+            {
+                RemoteLog("Buoc 3/4: Bo qua tao shortcut (theo tu chon).", RemoteLogKind.Step);
+            }
+
+            // Buoc 4 - Chay Viewer o che do listen
+            RemoteLog("Buoc 4/4: Khoi chay UltraVNC Viewer o che do lang nghe...", RemoteLogKind.Step);
+            var lst = RemoteSupport.StartListener(viewer, port, dsm);
+            LogAction(lst);
+
+            // Cho socket cua Viewer bind xong truoc khi kiem tra
+            RemoteLog("Doi cong " + port + " san sang...", RemoteLogKind.Step);
+            bool ready = RemoteSupport.WaitForPort(port, 10000);
+
+            // Ket luan
+            var probe = RemoteSupport.RunProbe(port);
+            RemoteLog("──────────────────────────────────────────────", RemoteLogKind.Heading);
+            if (ready && probe.PortListening)
+            {
+                RemoteLog("DA SAN SANG NHAN KET NOI tren cong " + port + ".", RemoteLogKind.Success);
+                RemoteLog("Bao cho nguoi dung IP: " + probe.LocalIPv4
+                        + "  (cong " + port + ") — ho doi 'Add New Client' tren may ho tro.",
+                    RemoteLogKind.Info);
+            }
+            else
+            {
+                RemoteLog("Viewer da chay nhung cong " + port
+                        + " chua san sang. Kiem tra lai Windows Defender Firewall.",
+                    RemoteLogKind.Warn);
+            }
+            MessageBox.Show(this,
+                "Máy nhận kết nối đã sẵn sàng.\n\n" +
+                "IP LAN của máy này: " + probe.LocalIPv4 + "\n" +
+                "Cổng lắng nghe: " + port + "\n\n" +
+                "Hãy gửi IP cho người dùng, họ nhập vào ô \"IP máy kỹ thuật viên\"\n" +
+                "trên máy cần hỗ trợ rồi bấm CHUẨN BỊ KẾT NỐI.",
+                "Sẵn sàng nhận kết nối", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        /// <summary>Máy cần hỗ trợ: cài service + cấu hình + mở kết nối ngược.</summary>
+        private void PrepareAsAssisted(string server, string uvncDir, string? dsm, int port)
+        {
+            string techIp = txtRemoteTechIp.Text.Trim();
+            if (!RemoteSupport.IsValidIPv4(techIp) && !RemoteSupport.IsSafeHost(techIp))
+            {
+                RemoteLog("IP máy kỹ thuật viên không hợp lệ: \"" + techIp + "\".",
+                    RemoteLogKind.Error);
+                MessageBox.Show(this,
+                    "IP máy kỹ thuật viên không hợp lệ.\n\n" +
+                    "Vui lòng nhập địa chỉ IPv4 (VD: 192.168.1.55) của máy kỹ thuật viên.",
+                    "Sai địa chỉ IP", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Buoc 1 - Firewall (may can ho tro cung can mo cong neu co chien dau)
+            RemoteLog("Buoc 1/4: Mo cong TCP " + port + " trong Windows Defender Firewall...",
+                RemoteLogKind.Step);
+            var fw = RemoteSupport.OpenFirewallPort(port);
+            LogAction(fw);
+
+            // Buoc 2 - ultravnc.ini
+            RemoteLog("Buoc 2/4: Cap nhat ultravnc.ini...", RemoteLogKind.Step);
+            string serviceCmd = $"-autoreconnect -connect {techIp}::{port}";
+            var ini = RemoteSupport.WriteIni(uvncDir, dsm, port, serviceCmd);
+            LogAction(ini);
+
+            // Buoc 3 - Service WinVNC
+            if (chkRemoteService.Checked)
+            {
+                RemoteLog("Buoc 3/4: Cai WinVNC thanh service de ho tro ca khi dang xuat...",
+                    RemoteLogKind.Step);
+                var svc = RemoteSupport.InstallService(server);
+                LogAction(svc);
+
+                var st = RemoteSupport.SetServiceState(true);
+                LogAction(st);
+            }
+            else
+            {
+                RemoteLog("Buoc 3/4: Bo qua cai service (theo tu chon).", RemoteLogKind.Step);
+            }
+
+            // Buoc 4 - Ket noi nguoc
+            RemoteLog("Buoc 4/4: Mo ket noi nguoc toi " + techIp + ":" + port + "...",
+                RemoteLogKind.Step);
+            var conn = RemoteSupport.ConnectReverse(server, techIp, port);
+            LogAction(conn);
+
+            RemoteLog("──────────────────────────────────────────────", RemoteLogKind.Heading);
+            RemoteLog("Đã gửi lệnh kết nối ngược tới " + techIp + ":" + port + ".", RemoteLogKind.Success);
+            RemoteLog("Màn hình máy này sẽ hiện trên máy kỹ thuật viên trong vài giây. "
+                    + "Nếu chưa thấy, hãy kiểm tra máy kỹ thuật viên đã bật chế độ lắng nghe chưa.",
+                RemoteLogKind.Info);
+            MessageBox.Show(this,
+                "Đã gửi lệnh kết nối ngược tới " + techIp + ":" + port + ".\n\n" +
+                "Vui lòng chờ trên máy kỹ thuật viên.\n" +
+                "Nếu kết nối không thành công, hãy kiểm tra lại IP và cổng.",
+                "Đã kết nối ngược", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        /// <summary>Chép IP LAN của máy này vào clipboard.</summary>
+        private void BtnRemoteCopyIp_Click(object? sender, EventArgs e)
+        {
+            var (ip, _) = RemoteSupport.GetLocalNetworkInfo();
+            if (ip.Length == 0)
+            {
+                MessageBox.Show(this,
+                    "Không tìm thấy IP LAN nào trên máy này.\n" +
+                    "Hãy kiểm tra kết nối mạng trước.",
+                    "Không có IP", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            try
+            {
+                Clipboard.SetText(ip);
+                RemoteLog("Đã chép IP " + ip + " vào clipboard.", RemoteLogKind.Success);
+            }
+            catch (Exception ex)
+            {
+                RemoteLog("Không chép được IP: " + ex.Message, RemoteLogKind.Error);
+            }
+        }
+
+        /// <summary>Nút Dừng / Dọn dẹp.</summary>
+        private void BtnRemoteStop_Click(object? sender, EventArgs e)
+        {
+            RemoteLog("=== DỪNG & DỌN DẸP ===", RemoteLogKind.Heading);
+
+            var v = RemoteSupport.StopViewer();
+            LogAction(v);
+
+            var s = RemoteSupport.StopServer();
+            LogAction(s);
+
+            int port = GetRemotePort();
+            var fw = RemoteSupport.CloseFirewallPort(port);
+            LogAction(fw);
+
+            RefreshRemoteStatus();
+        }
+
+        /// <summary>Ghi kết quả một thao tác vào nhật ký.</summary>
+        private void LogAction(RemoteSupport.ActionResult r)
+        {
+            RemoteLog(r.Summary, r.Success ? RemoteLogKind.Success : RemoteLogKind.Error);
+            foreach (string d in r.Details)
+                RemoteLog("    " + d, RemoteLogKind.Info);
+        }
+
+        /// <summary>Hướng dẫn nhanh cho chức năng hỗ trợ từ xa.</summary>
+        private void ShowRemoteHelp()
+        {
+            string role = remoteIsReceiver ? "MÁY NHẬN KẾT NỐI" : "MÁY CẦN HỖ TRỢ";
+            MessageBox.Show(this,
+                "HỖ TRỢ KỸ THUẬT TỪ XA (UltraVNC 1.4.2.0 Portable)\n" +
+                "═══════════════════════════════════════════\n\n" +
+                "Vai trò hiện tại: " + role + "\n\n" +
+                "MÁY NHẬN KẾT NỐI (máy kỹ thuật viên):\n" +
+                "  1. Chọn vai trò \"Máy nhận kết nối\".\n" +
+                "  2. Bấm CHUẨN BỊ KẾT NỐI → phần mềm tự mở firewall cổng 5500,\n" +
+                "     ghi ultravnc.ini, tạo shortcut và chạy vncviewer ở chế độ -listen.\n" +
+                "  3. Chép IP LAN của máy này (ô \"IP máy này\") gửi cho người dùng.\n\n" +
+                "MÁY CẦN HỖ TRỢ (máy quân sự):\n" +
+                "  1. Chọn vai trò \"Máy cần hỗ trợ\".\n" +
+                "  2. Nhập IP máy kỹ thuật viên và cổng 5500.\n" +
+                "  3. Bấm CHUẨN BỊ KẾT NỐI → phần mềm cài service WinVNC,\n" +
+                "     cấu hình ultravnc.ini và mở kết nối ngược (-connect ip::port).\n\n" +
+                "LƯU Ý BẢO MẬT:\n" +
+                "  • Bật mã hoá DSM (SecureVNCPlugin64.dsm) để tránh bị bắt gói tin trong LAN.\n" +
+                "  • Đặt mật khẩu VNC khác mật khẩu Windows của máy.\n" +
+                "  • Chỉ dùng trong mạng nội bộ của đơn vị.\n\n" +
+                "Nếu kết nối không được: kiểm tra Windows Defender Firewall, tiến trình\n" +
+                "vncviewer có đang chạy, và IP máy kỹ thuật viên đã đúng chưa.",
+                "Hướng dẫn - Hỗ trợ kỹ thuật từ xa",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         // ==================================================================

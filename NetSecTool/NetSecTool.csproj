@@ -10,12 +10,12 @@
     <ApplicationIcon>QDND.ico</ApplicationIcon>
     <AssemblyName>Danny</AssemblyName>
     <RootNamespace>NetSecTool</RootNamespace>
-    <Product>Danny ver5.0 - Trợ lý Công nghệ Thông tin</Product>
-    <AssemblyTitle>Danny ver5.0 - Trợ lý Công nghệ Thông tin</AssemblyTitle>
+    <Product>Danny ver5.5 - Trợ lý Công nghệ Thông tin</Product>
+    <AssemblyTitle>Danny ver5.5 - Trợ lý Công nghệ Thông tin</AssemblyTitle>
     <Company>Bộ Chỉ huy Quân sự tỉnh Lâm Đồng</Company>
-    <Version>5.0.0</Version>
-    <FileVersion>5.0.0.0</FileVersion>
-    <AssemblyVersion>5.0.0.0</AssemblyVersion>
+    <Version>5.5.0</Version>
+    <FileVersion>5.5.0.0</FileVersion>
+    <AssemblyVersion>5.5.0.0</AssemblyVersion>
     <Description>Trợ lý Công nghệ Thông tin - Trung tá Đoàn Danh Quyết</Description>
   </PropertyGroup>
 
@@ -71,5 +71,29 @@
     <InternalsVisibleTo Include="TestImeUnicode" />
     <InternalsVisibleTo Include="TestShotFinal" />
     <InternalsVisibleTo Include="ShotClean" />
+  </ItemGroup>
+
+  <!--
+    ============================================================
+    ULTRAVNC 1.4.2.0 PORTABLE - dung cho chuc nang "Ho tro ky
+    thuat tu xa" (tab moi o ver5.5).
+
+    Ban phan phoi chinh thuc tu uvnc.eu/download/1420/UltraVNC_1420.zip
+    (GNU/GPL). KHONG embed vao exe - giu rieng trong thu muc
+    tools/UltraVNC/ de ban phan phoi nhe hon.
+
+    Cau truc giu nguyen:
+        tools\UltraVNC\x64\  (vncviewer.exe, winvnc.exe, dll, plugin DSM)
+        tools\UltraVNC\x86\  (ban 32-bit cho may cu)
+
+    ExcludeFromSingleFile=true: bat buoc, neu khong co thi .NET se dung
+    file nay vao bundle single-file va exe se nang tro lai.
+  -->
+  <ItemGroup>
+    <None Include="Resources\UltraVNC\**\*"
+          Link="tools\UltraVNC\%(RecursiveDir)%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest"
+          CopyToPublishDirectory="PreserveNewest"
+          ExcludeFromSingleFile="true" />
   </ItemGroup>
 </Project>

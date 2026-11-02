@@ -1,10 +1,10 @@
-# Danny — Trợ lý Công nghệ thông tin (ver5.0)
+# Danny — Trợ lý Công nghệ thông tin (ver5.5)
 
 Phần mềm quản trị máy tính cho đơn vị quân sự, viết bởi **Trung tá Đoàn Danh Quyết**.
 
 | | |
 |---|---|
-| **Phiên bản hiện tại** | 5.0.0 — [tải tại đây](https://github.com/doandanhquyetqk7/Danny/releases/tag/v5.0.0) |
+| **Phiên bản hiện tại** | 5.5.0 — [tải tại đây](https://github.com/doandanhquyetqk7/Danny/releases/tag/v5.5.0) |
 | **Nền tảng** | .NET 8 / Windows Forms · yêu cầu quyền Administrator |
 | **Liên hệ** | 0366.714.139 · Bộ Chỉ huy Quân sự tỉnh Lâm Đồng |
 | **Theo dõi phiên bản** | [Projects board — Danny project](https://github.com/users/doandanhquyetqk7/projects/1) |
@@ -18,6 +18,7 @@ Phần mềm quản trị máy tính cho đơn vị quân sự, viết bởi **T
 | **ver5.2** | Xác minh chữ ký Authenticode cho bộ phân phối | ⚪ Backlog |
 | **ver5.3** | Dashboard trạng thái giám sát EDR (4 service MiAV + driver kernel) | ⚪ Backlog |
 | **ver5.4** | Chế độ an toàn "không Internet" cho bước làm sạch (tự ngắt adapter) | ⚪ Backlog |
+| **ver5.5** | ★ **Hỗ trợ kỹ thuật từ xa** (UltraVNC 1.4.2.0 + mã hóa DSM) | ✅ Đã phát hành — [release](https://github.com/doandanhquyetqk7/Danny/releases/tag/v5.5.0) |
 
 
 ## Các tab chức năng
@@ -30,6 +31,28 @@ Phần mềm quản trị máy tính cho đơn vị quân sự, viết bởi **T
 | 4 | **CẤU HÌNH MẠNG** | Cấu hình IP/DNS thủ công |
 | 5 | **LÀM SẠCH PC MỘT CHẠM** | Xóa log MiAV + artifact Windows → quét KVRT → **cài lại MiAV** → reboot |
 | 6 | **BẢO MẬT & TIỆN ÍCH** | Chạy KVRT thủ công, xóa Event Viewer, hiện file ẩn |
+| 7 | **HỖ TRỢ KỸ THUẬT TỪ XA** | ★ Máy nhận kết nối (lắng nghe) / Máy cần hỗ trợ (kết nối ngược) — mở port 5500, cấu hình DSM, tạo shortcut, chạy UltraVNC tự động |
+
+## Quy trình “Hỗ trợ kỹ thuật từ xa” (ver5.5)
+
+```
+MÁY NHẬN KẾT NỐI (Viewer / Kỹ thuật viên)     MÁY CẦN HỖ TRỢ (Client / PC quân sự)
+─────────────────────────────────────────      ──────────────────────────────────────────
+[Nhận kết nối]                                [Cần hỗ trợ]
+  ↓                                             ↓
+Mở Firewall TCP 5500                            Cài + khởi động service WinVNC
+  ↓                                             ↓
+Ghi ultravnc.ini (Security=2/DSM)               Ghi ultravnc.ini (Security=2/DSM)
+  ↓                                             ↓
+Tạo shortcut "Lắng nghe"                        Kết nối ngược → <IP kỹ thuật viên>::5500
+  ↓                                             ↓
+Chạy vncviewer.exe -listen 5500                 Sẵn sàng nhận phiên từ xa
+  ↓                                             ↓
+Hiển thị IP cho máy cần hỗ trợ                 ★ Hiển thị trạng thái kết nối
+```
+
+Cả hai vai trò đều tự động hoá 5 bước sau khi bấm nút — người dùng chỉ cần
+bấm 1 lần. Cổng mặc định `5500`, có thể đổi qua tham số `--port`.
 
 ## Quy trình “Làm sạch PC một chạm” (ver5.0)
 
@@ -51,11 +74,14 @@ rồi xác minh 4 service `MiAVWD` / `MiAVUpdate` / `MiAVProtect` / `Defense`
 ## Cấu trúc bộ cài
 
 ```
-Danny-ver5.0/
-├── Danny-ver5.0.exe           69,15 MB  ← khuyến nghị (self-contained)
-├── Danny-ver5.0-nethost.exe   1,36 MB  ← cần .NET 8 Desktop Runtime
+Danny-ver5.5/
+├── Danny-ver5.5.exe           69,15 MB  ← khuyến nghị (self-contained)
+├── Danny-ver5.5-nethost.exe   1,36 MB  ← cần .NET 8 Desktop Runtime
 ├── tools\KVRT.exe            116,28 MB
 ├── tools\SetupMiAV.exe        21,20 MB
+├── tools\UltraVNC\           UltraVNC 1.4.2.0 portable (x64 + x86) + DSM plugin
+│   ├── x64\vncviewer.exe, winvnc.exe, SecureVNCPlugin64.dsm
+│   └── x86\vncviewer.exe, winvnc.exe, SecureVNCPlugin.dsm
 └── HUONG-DAN-SU-DUNG.md
 ```
 
@@ -69,6 +95,8 @@ Danny-ver5.0/
 | `NetSecTool/IpPlan.cs`, `IpNetTable.cs`, `OneClickIpService.cs` | Cấu hình IP một chạm |
 | `NetSecTool/NetDiagnostics.cs` | Chẩn đoán kết nối mạng |
 | `NetSecTool/UnitSearch.cs`, `UnitSearchBox.cs` | Tìm kiếm đơn vị (bỏ dấu tiếng Việt) |
+| `NetSecTool/RemoteSupport.cs` | ★ Engine hỗ trợ kỹ thuật từ xa (UltraVNC) |
+| `NetSecTool/ShellLink.cs` | Tạo shortcut Unicode qua COM IShellLinkW |
 | `Phan tich MiAV/` | Báo cáo phân tích EDR MiAV 4.1.1.2 + script làm sạch log |
 | `report/` | Báo cáo cơ chế MiAV / USB An Toàn (kèm sơ đồ) |
 | `evidence/` | Evidence E-001 … E-008 |
@@ -93,10 +121,12 @@ dotnet publish -c Release -r win-x64 -p:SelfContained=false \
 ## CLI
 
 ```cmd
-Danny-ver5.0.exe --make-safe "J:\"    :: Tạo USB An Toàn 2.6
-Danny-ver5.0.exe --check "J:\"        :: Kiểm tra trạng thái USB an toàn
-Danny-ver5.0.exe --diag [--full]       :: Kiểm tra kết nối mạng
-Danny-ver5.0.exe --clean               :: Làm sạch PC một chạm (kèm cài lại MiAV)
+Danny-ver5.5.exe --make-safe "J:\"    :: Tạo USB An Toàn 2.6
+Danny-ver5.5.exe --check "J:\"        :: Kiểm tra trạng thái USB an toàn
+Danny-ver5.5.exe --diag [--full]       :: Kiểm tra kết nối mạng
+Danny-ver5.5.exe --clean               :: Làm sạch PC một chạm (kèm cài lại MiAV)
+Danny-ver5.5.exe --remote-listen [--port 5500]              :: Máy nhận kết nối
+Danny-ver5.5.exe --remote-connect --ip <host> [--port 5500] :: Máy cần hỗ trợ
 ```
 
 ---
