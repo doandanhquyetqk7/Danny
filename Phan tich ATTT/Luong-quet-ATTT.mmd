@@ -1,0 +1,45 @@
+flowchart TD
+    start(["Bắt đầu quét"]) --> precheck{"Điền đủ thông tin?<br/>Đơn vị kiểm tra +<br/>Tên cán bộ kiểm tra"}
+    precheck -->|Chưa| err1["Hiện cảnh báo — dừng"]
+    precheck -->|Đủ| init["_finalScore = 100<br/>Khởi tạo 9 bước UI"]
+
+    init --> p0["Phase 1 · Log Hệ thống<br/>4625 / 1102 / 6005 · Temp · 4104 · Sysmon · TCP"]
+    p0 --> p1["Phase 2 · Định danh & Đặc quyền<br/>SAM · Guest · Blank pwd · Tài khoản ẩn · UAC"]
+    p1 --> p2["Phase 3 · Giải pháp ATTT<br/>Firewall · Defender · MiAV · nextav"]
+    p2 --> p3["Phase 4 · HĐH & Bản vá<br/>EOL · QuickFix 90 ngày"]
+    p3 --> p4["Phase 5 · OS Hardening<br/>UAC · SMBv1 · Cổng 445/3389 · RDP phiên"]
+    p4 --> p5["Phase 6 · Persistence<br/>Task · Registry Run · Service unsigned · Unquoted path"]
+    p5 --> p6["Phase 7 · Kết nối Mạng<br/>netstat + PID · Blacklist IP · Cổng C&C · SSH/RDP"]
+    p6 --> p7["Phase 8 · USB & Ngoại vi<br/>USBSTOR · USB Wi-Fi · Tethering · Kernel-PnP"]
+    p7 --> p8["Phase 9 · Đồng bộ<br/>Lưu JSON → Upload → Cài Agent → FMS"]
+
+    p8 --> score["Tổng điểm = 100 − Σ penalty<br/>Clamp ≥ 0"]
+    score --> band{"Phân loại"}
+    band -->|"≥ 90"| b1["AN TOÀN<br/>chưa phát hiện"]
+    band -->|"75 – 89"| b2["CẢNH BÁO<br/>chưa phát hiện"]
+    band -->|"< 75"| b3["NGUY HIỂN<br/>phát hiện"]
+
+    b1 --> out1["Xuất Word Biên bản"]
+    b2 --> out1
+    b3 --> out1
+    out1 --> done(["Hoàn tất"])
+
+    p0 -.->|"UnauthorizedAccess"| skip["Skipped + SkipReason<br/>ghi vào báo cáo"]
+    p1 -.-> skip
+    p2 -.-> skip
+    p3 -.-> skip
+    p4 -.-> skip
+    p5 -.-> skip
+    p6 -.-> skip
+    p7 -.-> skip
+    skip -.-> score
+
+    classDef ok fill:#1D212D,stroke:#00C853,color:#CBD5E0
+    classDef warn fill:#1D212D,stroke:#F59E0B,color:#CBD5E0
+    classDef bad fill:#1D212D,stroke:#D32F2F,color:#CBD5E0
+    classDef grey fill:#1D212D,stroke:#64748B,color:#94A3B8
+    class b1 ok
+    class b2 warn
+    class b3 bad
+    class skip grey
+    class err1 bad

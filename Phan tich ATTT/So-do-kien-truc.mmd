@@ -1,0 +1,61 @@
+flowchart LR
+    subgraph UI["Attt.Ui — WPF + MaterialDesign (dark theme)"]
+        dash["Dashboard<br/>Điểm · AV · NIC"]
+        scan["Scan View<br/>Form + 9 bước + Console"]
+        result["Result View<br/>Alerts + Vulnerabilities"]
+        settings["Settings View<br/>rules · keywords"]
+        adv["Advanced Tools<br/>Xóa Log · Truy vết · Tài liệu mật"]
+    end
+
+    subgraph CORE["Attt.Core — Domain + Rule Engine"]
+        engine["RuleEngine<br/>rules.json → severity + penalty"]
+        checks["Checks (ICheck)<br/>SystemPatch · AntiMalware<br/>Identity · Network<br/>Peripherals · Persistence<br/>LogIntegrity · Forensics"]
+        metrics["MetricBag<br/>Sum/Max theo chính sách"]
+        ctx["AuditContext<br/>hostname · user · IP · MAC"]
+    end
+
+    subgraph DS["DataSources — WMI / Registry / EventLog / Process / Network / FS"]
+        wmi["WmiDataSource"]
+        reg["RegistryDataSource"]
+        evt["EventLogDataSource"]
+        proc["ProcessDataSource"]
+        net["NetworkDataSource"]
+        fs["FileSystemDataSource"]
+    end
+
+    subgraph OUT["Attt.Reporters"]
+        json["JsonReportExporter<br/>Data/AuditResults/KiemTra_*.json"]
+        word["WordReportExporter<br/>BienBan_KTATTT_*.docx"]
+        excel["ExcelRollupExporter ★<br/>gộp nhiều máy theo đơn vị"]
+    end
+
+    subgraph EXT["Hệ thống bên ngoài (tùy chọn, fail-soft)"]
+        api["API danh mục đơn vị<br/>JSON cache offline 30 ngày"]
+        fms["FMS định danh thiết bị"]
+    end
+
+    svc["Attt.Service ★<br/>Agent giám sát mạng nền<br/>Windows Service / Task SYSTEM"]
+    cli["Attt.Cli ★<br/>--audit --output json<br/>headless, tự động hoá"]
+
+    dash --> scan
+    scan --> checks
+    checks --> DS
+    DS --> checks
+    checks --> engine
+    engine --> metrics
+    ctx --> checks
+    metrics --> result
+    metrics --> json
+    metrics --> word
+    json --> excel
+    metrics --> api
+    metrics --> fms
+    svc -. "poll 10s · Disable-NetAdapter khi Online" .-> net
+    cli --> checks
+    settings --> engine
+    adv --> checks
+
+    classDef new fill:#1D212D,stroke:#00C853,stroke-width:2px,color:#CBD5E0
+    classDef ext fill:#1D212D,stroke:#64748B,stroke-dasharray:4 3,color:#94A3B8
+    class excel,svc,cli new
+    class api,fms ext
