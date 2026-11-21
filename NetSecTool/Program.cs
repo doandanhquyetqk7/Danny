@@ -16,8 +16,8 @@ static class Program
     ///      Danny.exe --check "J:\"
     ///      Danny.exe --diag [--adapter Ethernet] [--ip 192.168.1.100] [--gateway 192.168.1.1] [--full]
     ///      Danny.exe --clean
-    ///      Danny.exe --remote-listen [--port 5500]
-    ///      Danny.exe --remote-connect --ip 192.168.1.55 [--port 5500]
+    ///      Danny.exe --remote-listen [--port 21118] [--whitelist "86.134.32.150/24"]
+    ///      Danny.exe --remote-connect --ip 192.168.1.55 [--port 21118] [--whitelist "..."]
     ///
     ///  Ket qua duoc ghi ra STDOUT. Che do CLI KHONG hien bat ky hop thoai
     ///  nao (khong MessageBox) - phu hop voi viec chay tu dong.
@@ -27,12 +27,64 @@ static class Program
     {
         if (args.Length > 0 && args[0].StartsWith("--"))
         {
+            // Bat UTF-8 cho console de chu tieng Viet hien thi dung
+            try { Console.OutputEncoding = System.Text.Encoding.UTF8; } catch { }
             RunCli(args);
             return;
         }
 
         ApplicationConfiguration.Initialize();
         Application.Run(new Form1());
+    }
+
+    /// <summary>
+    ///  Ghi ra console theo dang ASCII thuan.
+    ///
+    ///  <para>Windows Console mac dinh dung codepage 437/850, khong hien thi
+    ///  duoc chu tieng Viet co dau -> hien se ra "mojibake". Ham nay bo dau
+    ///  tieng Viet truoc khi ghi ra, giu cho phan CLI doc duoc tren moi
+    ///  dau cua so lenh.</para>
+    /// </summary>
+    private static void Say(string message = "")
+    {
+        Console.WriteLine(ToAscii(message));
+    }
+
+    /// <summary>
+    ///  Chuyen chuoi tieng Viet co dau sang ASCII tuong duong.
+    ///
+    ///  <para>Dung Unicode normalization dang FormD de tach dau ra thanh
+    ///  ky tu combining, roi loai bo ky tu khong thuoc ASCII.</para>
+    /// </summary>
+    private static string ToAscii(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return s;
+
+        // Cac ky tu dac biet can giu lai vi chung khong phai dau tieng Viet
+        var keep = new Dictionary<char, char>
+        {
+            { '\u0111', 'd' },  // đ
+            { '\u0110', 'D' },  // Đ
+        };
+
+        try
+        {
+            string decomposed = s.Normalize(System.Text.NormalizationForm.FormD);
+            var sb = new System.Text.StringBuilder(decomposed.Length);
+            foreach (char c in decomposed)
+            {
+                if (c < 128) { sb.Append(c); continue; }
+                if (keep.TryGetValue(c, out char rep)) { sb.Append(rep); continue; }
+                // Ky tu combining (dau) -> bo qua
+                if (char.GetUnicodeCategory(c) == System.Globalization.UnicodeCategory.NonSpacingMark) continue;
+                sb.Append(c);
+            }
+            return sb.ToString().Normalize(System.Text.NormalizationForm.FormC);
+        }
+        catch
+        {
+            return s;
+        }
     }
 
     private static void RunCli(string[] args)
@@ -45,6 +97,7 @@ static class Program
         string adapter = "";
         string ip = "";
         string gateway = "";
+        string whitelist = RemoteSupport.DefaultWhitelist;
         bool doFormat = false;
         bool full = false;
         int port = 0;
@@ -63,6 +116,7 @@ static class Program
                 case "--adapter": if (i + 1 < args.Length) adapter = args[++i]; break;
                 case "--ip": if (i + 1 < args.Length) ip = args[++i]; break;
                 case "--gateway": if (i + 1 < args.Length) gateway = args[++i]; break;
+                case "--whitelist": if (i + 1 < args.Length) whitelist = args[++i]; break;
                 case "--format": doFormat = true; break;
                 case "--full": full = true; break;
                 case "--no-browser": noBrowser = true; break;
@@ -190,108 +244,125 @@ static class Program
 
             case "--remote-listen":
                 {
-                    // May nhan ket noi: mo cong, cau hinh, tao shortcut, chay viewer listen.
-                    int p = port > 0 ? port : RemoteSupport.DefaultListenPort;
-                    Console.WriteLine("=== DANNY ver5.5 - HO TRO KY THUAT TU XA (MAY NHAN KET NOI) ===");
+                    // May nhan ket noi: mo cong, cau hinh Direct IP, tao shortcut, chay RustDesk.
+                    int p = port > 0 ? port : RemoteSupport.DefaultDirectPort;
+                    Say("=== DANNY ver5.6 - HO TRO KY THUAT TU XA (MAY NHAN KET NOI) ===");
 
-                    var (viewer, server) = RemoteSupport.LocateExecutables();
-                    if (viewer == null || server == null)
+                    string? client = RemoteSupport.LocateClient();
+                    if (client == null)
                     {
-                        Console.WriteLine("LOI: khong tim thay bo cong cu UltraVNC trong tools\\UltraVNC.");
+                        Say("LOI: khong tim thay rustdesk.exe trong tools\\RustDesk.");
                         break;
                     }
-                    string uvncDir = Path.GetDirectoryName(viewer)!;
-                    string? dsm = RemoteSupport.LocateDsmPlugin(uvncDir);
+                    Say($"Cong Direct IP : {p}");
+                    Say($"Whitelist     : {whitelist}");
+                    Say($"IP LAN may nay: {RemoteSupport.GetLocalNetworkInfo().ip}");
+                    Say();
 
-                    var probe0 = RemoteSupport.RunProbe(p);
-                    Console.WriteLine($"IP LAN may nay: {probe0.LocalIPv4}");
-                    Console.WriteLine($"Cong listen   : {p}");
-                    Console.WriteLine($"Ma hoa DSM    : {(dsm != null ? Path.GetFileName(dsm) : "KHONG (khong ma hoa!)")}");
-                    Console.WriteLine();
+                    var fw = RemoteSupport.OpenFirewallPort(p, whitelist);
+                    Say((fw.Success ? "[ OK ] " : "[LOI]  ") + fw.Summary);
 
-                    var fw = RemoteSupport.OpenFirewallPort(p);
-                    Console.WriteLine((fw.Success ? "[ OK ] " : "[LOI]  ") + fw.Summary);
+                    var cfg = RemoteSupport.ApplyDirectIpConfig(p, whitelist,
+                        approveMode: "click", verificationMethod: "use-temporary-password");
+                    Say((cfg.Success ? "[ OK ] " : "[LOI]  ") + cfg.Summary);
+                    foreach (string d in cfg.Details) Say("       " + d);
 
-                    var ini = RemoteSupport.WriteIni(uvncDir, dsm, p);
-                    Console.WriteLine((ini.Success ? "[ OK ] " : "[LOI]  ") + ini.Summary);
+                    var lnk = RemoteSupport.CreateHostShortcut(client, p);
+                    Say((lnk.Success ? "[ OK ] " : "[LOI]  ") + lnk.Summary);
 
-                    var lnk = RemoteSupport.CreateListenShortcut(viewer, p, dsm);
-                    Console.WriteLine((lnk.Success ? "[ OK ] " : "[LOI]  ") + lnk.Summary);
-
-                    var lst = RemoteSupport.StartListener(viewer, p, dsm);
-                    Console.WriteLine((lst.Success ? "[ OK ] " : "[LOI]  ") + lst.Summary);
+                    if (!noService && RemoteSupport.IsAdministrator())
+                    {
+                        var svc = RemoteSupport.InstallService(client);
+                        Say((svc.Success ? "[ OK ] " : "[LOI]  ") + svc.Summary);
+                        var st = RemoteSupport.SetServiceState(true);
+                        Say((st.Success ? "[ OK ] " : "[LOI]  ") + st.Summary);
+                    }
+                    else
+                    {
+                        var host = RemoteSupport.StartHost(client);
+                        Say((host.Success ? "[ OK ] " : "[LOI]  ") + host.Summary);
+                    }
 
                     System.Threading.Thread.Sleep(2000);
                     bool ready = RemoteSupport.WaitForPort(p, 10000);
                     var probe = RemoteSupport.RunProbe(p);
-                    Console.WriteLine();
+                    Say();
                     if (ready && probe.PortListening)
                     {
-                        Console.WriteLine($"DA SAN SANG NHAN KET NOI tren cong {p}.");
-                        Console.WriteLine($"Bao cho nguoi dung: IP = {probe.LocalIPv4}, cong = {p}");
+                        Say($"DA SAN SANG NHAN KET NOI tren cong {p}.");
+                        Say($"Bao nguoi dung IP: {probe.LocalIPv4}:{p}");
                     }
                     else
                     {
-                        Console.WriteLine($"CANH BAO: cong {p} chua san sang.");
+                        Say($"Cong {p} chua san sang. Kiem tra Windows Defender Firewall.");
                     }
+                    Say("Luu y: trang thai \"Not ready\" trong RustDesk la binh thuong khi offline.");
                     break;
                 }
 
             case "--remote-connect":
                 {
-                    // May can ho tro: mo ket noi nguoc toi may ky thuat vien.
-                    int p = port > 0 ? port : RemoteSupport.DefaultListenPort;
+                    // May can ho tro: mo cong, cau hinh Direct IP, ket noi truc tiep.
+                    int p = port > 0 ? port : RemoteSupport.DefaultDirectPort;
                     if (string.IsNullOrWhiteSpace(ip))
                     {
-                        Console.WriteLine("LOI: thieu IP may ky thuat vien. Vi du: --remote-connect --ip 192.168.1.55");
+                        Say("LOI: thieu IP may can ho tro. Vi du: --remote-connect --ip 86.134.32.55");
                         break;
                     }
-                    if (!RemoteSupport.IsValidIPv4(ip) && !RemoteSupport.IsSafeHost(ip))
+                    if (!RemoteSupport.IsValidTarget(ip))
                     {
-                        Console.WriteLine("LOI: IP khong hop le: " + ip);
+                        Say("LOI: IP khong hop le: " + ip);
                         break;
                     }
 
-                    Console.WriteLine("=== DANNY ver5.5 - HO TRO KY THUAT TU XA (MAY CAN HO TRO) ===");
-                    var (viewer, server) = RemoteSupport.LocateExecutables();
-                    if (viewer == null || server == null)
+                    Say("=== DANNY ver5.6 - HO TRO KY THUAT TU XA (MAY CAN HO TRO) ===");
+
+                    string? client = RemoteSupport.LocateClient();
+                    if (client == null)
                     {
-                        Console.WriteLine("LOI: khong tim thay bo cong cu UltraVNC trong tools\\UltraVNC.");
+                        Say("LOI: khong tim thay rustdesk.exe trong tools\\RustDesk.");
                         break;
                     }
-                    string uvncDir = Path.GetDirectoryName(server)!;
-                    string? dsm = RemoteSupport.LocateDsmPlugin(uvncDir);
+                    Say($"Dich ket noi   : {RemoteSupport.BuildConnectTarget(ip, p)}");
+                    Say($"Cong Direct IP : {p}");
+                    Say($"Whitelist     : {whitelist}");
+                    Say();
 
-                    var fw = RemoteSupport.OpenFirewallPort(p);
-                    Console.WriteLine((fw.Success ? "[ OK ] " : "[LOI]  ") + fw.Summary);
+                    var fw = RemoteSupport.OpenFirewallPort(p, whitelist);
+                    Say((fw.Success ? "[ OK ] " : "[LOI]  ") + fw.Summary);
 
-                    var ini = RemoteSupport.WriteIni(uvncDir, dsm, p,
-                        $"-autoreconnect -connect {ip}::{p}");
-                    Console.WriteLine((ini.Success ? "[ OK ] " : "[LOI]  ") + ini.Summary);
+                    var cfg = RemoteSupport.ApplyDirectIpConfig(p, whitelist,
+                        approveMode: "click", verificationMethod: "use-temporary-password");
+                    Say((cfg.Success ? "[ OK ] " : "[LOI]  ") + cfg.Summary);
 
-                    if (!noService)
+                    if (!noService && RemoteSupport.IsAdministrator())
                     {
-                        var svc = RemoteSupport.InstallService(server);
-                        Console.WriteLine((svc.Success ? "[ OK ] " : "[LOI]  ") + svc.Summary);
+                        var svc = RemoteSupport.InstallService(client);
+                        Say((svc.Success ? "[ OK ] " : "[LOI]  ") + svc.Summary);
                         var st = RemoteSupport.SetServiceState(true);
-                        Console.WriteLine((st.Success ? "[ OK ] " : "[LOI]  ") + st.Summary);
+                        Say((st.Success ? "[ OK ] " : "[LOI]  ") + st.Summary);
+                    }
+                    else
+                    {
+                        var host = RemoteSupport.StartHost(client);
+                        Say((host.Success ? "[ OK ] " : "[LOI]  ") + host.Summary);
                     }
 
-                    var conn = RemoteSupport.ConnectReverse(server, ip, p);
-                    Console.WriteLine((conn.Success ? "[ OK ] " : "[LOI]  ") + conn.Summary);
-                    foreach (string d in conn.Details) Console.WriteLine("       " + d);
+                    var conn = RemoteSupport.ConnectDirect(client, ip, p);
+                    Say((conn.Success ? "[ OK ] " : "[LOI]  ") + conn.Summary);
+                    foreach (string d in conn.Details) Say("       " + d);
                     break;
                 }
 
             default:
-                Console.WriteLine("LOI: lenh khong hop le: " + cmd);
-                Console.WriteLine("Cac lenh ho tro:");
-                Console.WriteLine("  --make-safe \"X:\\\"   Tao USB An Toan 2.6");
-                Console.WriteLine("  --check \"X:\\\"       Kiem tra trang thai USB an toan");
-                Console.WriteLine("  --diag [--full]      Kiem tra ket noi mang (4 buoc chan doan)");
-                Console.WriteLine("  --clean [--no-kvrt]  Lam sach PC mot cham (xoa log, quet KVRT, cai lai MiAV)");
-                Console.WriteLine("  --remote-listen [--port 5500]      May nhan ket noi (UltraVNC listen)");
-                Console.WriteLine("  --remote-connect --ip X.X.X.X [--port 5500]  May can ho tro (ket noi nguoc)");
+                Say("LOI: lenh khong hop le: " + cmd);
+                Say("Cac lenh ho tro:");
+                Say("  --make-safe \"X:\\\"   Tao USB An Toan 2.6");
+                Say("  --check \"X:\\\"       Kiem tra trang thai USB an toan");
+                Say("  --diag [--full]      Kiem tra ket noi mang (4 buoc chan doan)");
+                Say("  --clean [--no-kvrt]  Lam sach PC mot cham (xoa log, quet KVRT, cai lai MiAV)");
+                Say("  --remote-listen [--port 21118] [--whitelist \"IP/CIDR\"]   May nhan ket noi (RustDesk Direct IP)");
+                Say("  --remote-connect --ip X.X.X.X [--port 21118] [--whitelist \"IP/CIDR\"]  May can ho tro (ket noi truc tiep)");
                 break;
         }
     }

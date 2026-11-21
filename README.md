@@ -1,10 +1,10 @@
-# Danny — Trợ lý Công nghệ thông tin (ver5.5)
+# Danny — Trợ lý Công nghệ thông tin (ver5.6)
 
 Phần mềm quản trị máy tính cho đơn vị quân sự, viết bởi **Trung tá Đoàn Danh Quyết**.
 
 | | |
 |---|---|
-| **Phiên bản hiện tại** | 5.5.0 — [tải tại đây](https://github.com/doandanhquyetqk7/Danny/releases/tag/v5.5.0) |
+| **Phiên bản hiện tại** | 5.6.0 — [tải tại đây](https://github.com/doandanhquyetqk7/Danny/releases/tag/v5.6.0) |
 | **Nền tảng** | .NET 8 / Windows Forms · yêu cầu quyền Administrator |
 | **Liên hệ** | 0366.714.139 · Bộ Chỉ huy Quân sự tỉnh Lâm Đồng |
 | **Theo dõi phiên bản** | [Projects board — Danny project](https://github.com/users/doandanhquyetqk7/projects/1) |
@@ -18,7 +18,8 @@ Phần mềm quản trị máy tính cho đơn vị quân sự, viết bởi **T
 | **ver5.2** | Xác minh chữ ký Authenticode cho bộ phân phối | ⚪ Backlog |
 | **ver5.3** | Dashboard trạng thái giám sát EDR (4 service MiAV + driver kernel) | ⚪ Backlog |
 | **ver5.4** | Chế độ an toàn "không Internet" cho bước làm sạch (tự ngắt adapter) | ⚪ Backlog |
-| **ver5.5** | ★ **Hỗ trợ kỹ thuật từ xa** (UltraVNC 1.4.2.0 + mã hóa DSM) | ✅ Đã phát hành — [release](https://github.com/doandanhquyetqk7/Danny/releases/tag/v5.5.0) |
+| **ver5.5** | **Hỗ trợ kỹ thuật từ xa** (UltraVNC 1.4.2.0 + mã hóa DSM) | ✅ Đã phát hành — [release](https://github.com/doandanhquyetqk7/Danny/releases/tag/v5.5.0) |
+| **ver5.6** | ★ **Chuyển hỗ trợ từ xa sang RustDesk 1.5.3** — Direct IP Access **100% offline**, whitelist IP/CIDR, xác nhận an toàn | ✅ Đã phát hành — [release](https://github.com/doandanhquyetqk7/Danny/releases/tag/v5.6.0) |
 
 
 ## Các tab chức năng
@@ -31,28 +32,38 @@ Phần mềm quản trị máy tính cho đơn vị quân sự, viết bởi **T
 | 4 | **CẤU HÌNH MẠNG** | Cấu hình IP/DNS thủ công |
 | 5 | **LÀM SẠCH PC MỘT CHẠM** | Xóa log MiAV + artifact Windows → quét KVRT → **cài lại MiAV** → reboot |
 | 6 | **BẢO MẬT & TIỆN ÍCH** | Chạy KVRT thủ công, xóa Event Viewer, hiện file ẩn |
-| 7 | **HỖ TRỢ KỸ THUẬT TỪ XA** | ★ Máy nhận kết nối (lắng nghe) / Máy cần hỗ trợ (kết nối ngược) — mở port 5500, cấu hình DSM, tạo shortcut, chạy UltraVNC tự động |
+| 7 | **HỖ TRỢ KỸ THUẬT TỪ XA** | ★ Máy nhận kết nối / Máy cần hỗ trợ — **RustDesk Direct IP (offline)**, mở port 21118, whitelist IP/CIDR, xác nhận an toàn |
 
-## Quy trình “Hỗ trợ kỹ thuật từ xa” (ver5.5)
+## Quy trình “Hỗ trợ kỹ thuật từ xa” (ver5.6 — RustDesk Direct IP)
 
 ```
-MÁY NHẬN KẾT NỐI (Viewer / Kỹ thuật viên)     MÁY CẦN HỖ TRỢ (Client / PC quân sự)
+MÁY NHẬN KẾT NỐI (Kỹ thuật viên)              MÁY CẦN HỖ TRỢ (PC quân sự)
 ─────────────────────────────────────────      ──────────────────────────────────────────
 [Nhận kết nối]                                [Cần hỗ trợ]
   ↓                                             ↓
-Mở Firewall TCP 5500                            Cài + khởi động service WinVNC
+Mở Firewall TCP 21118 (khoá theo              Mở Firewall TCP 21118 (khoá theo
+RemoteAddress = whitelist)                     RemoteAddress = whitelist)
   ↓                                             ↓
-Ghi ultravnc.ini (Security=2/DSM)               Ghi ultravnc.ini (Security=2/DSM)
+Ghi RustDesk2.toml [options]:                  Ghi RustDesk2.toml [options]:
+  direct-server = 'Y'                            direct-server = 'Y'
+  direct-access-port = '21118'                   direct-access-port = '21118'
+  whitelist = '86.134.32.150/24'                 whitelist = '86.134.32.150/24'
+  approve-mode = 'click'                         approve-mode = 'click'
   ↓                                             ↓
-Tạo shortcut "Lắng nghe"                        Kết nối ngược → <IP kỹ thuật viên>::5500
+Tạo shortcut "Bật hỗ trợ từ xa"                Cài + khởi động service RustDesk
   ↓                                             ↓
-Chạy vncviewer.exe -listen 5500                 Sẵn sàng nhận phiên từ xa
+rustdesk.exe --server (listener 21118)         Kết nối TRỰC TIẾP → <IP kỹ thuật viên>:21118
   ↓                                             ↓
 Hiển thị IP cho máy cần hỗ trợ                 ★ Hiển thị trạng thái kết nối
 ```
 
-Cả hai vai trò đều tự động hoá 5 bước sau khi bấm nút — người dùng chỉ cần
-bấm 1 lần. Cổng mặc định `5500`, có thể đổi qua tham số `--port`.
+Cả hai vai trò đều tự động hoá 4 bước sau khi bấm nút — người dùng chỉ cần
+bấm 1 lần. Cổng mặc định `21118`, whitelist mặc định `86.134.32.150/24`
+(sửa tay được), có thể đổi qua `--port` / `--whitelist`.
+
+> **Khác biệt so với ver5.5 (UltraVNC):** kết nối **trực tiếp** qua IP nội bộ,
+> **không cần ID Server / Relay Server, không cần Internet** — 100% offline.
+> Đổi lại, mỗi phiên đều phải được **xác nhận thủ công** (`approve-mode=click`).
 
 ## Quy trình “Làm sạch PC một chạm” (ver5.0)
 
@@ -74,14 +85,15 @@ rồi xác minh 4 service `MiAVWD` / `MiAVUpdate` / `MiAVProtect` / `Defense`
 ## Cấu trúc bộ cài
 
 ```
-Danny-ver5.5/
-├── Danny-ver5.5.exe           69,15 MB  ← khuyến nghị (self-contained)
-├── Danny-ver5.5-nethost.exe   1,36 MB  ← cần .NET 8 Desktop Runtime
+Danny-ver5.6/
+├── Danny-ver5.6.exe           69,16 MB  ← khuyến nghị (self-contained)
+├── Danny-ver5.6-nethost.exe   1,41 MB  ← cần .NET 8 Desktop Runtime
 ├── tools\KVRT.exe            116,28 MB
 ├── tools\SetupMiAV.exe        21,20 MB
-├── tools\UltraVNC\           UltraVNC 1.4.2.0 portable (x64 + x86) + DSM plugin
-│   ├── x64\vncviewer.exe, winvnc.exe, SecureVNCPlugin64.dsm
-│   └── x86\vncviewer.exe, winvnc.exe, SecureVNCPlugin.dsm
+├── tools\RustDesk\          RustDesk 1.5.3 + RustDesk Server tự host
+│   ├── rustdesk.exe            25,02 MB  ← client (chế độ Direct IP)
+│   └── server\                            ← ID server / Relay server (tùy chọn)
+│       ├── hbbs.exe, hbbr.exe, rustdesk-utils.exe
 └── HUONG-DAN-SU-DUNG.md
 ```
 
@@ -95,7 +107,7 @@ Danny-ver5.5/
 | `NetSecTool/IpPlan.cs`, `IpNetTable.cs`, `OneClickIpService.cs` | Cấu hình IP một chạm |
 | `NetSecTool/NetDiagnostics.cs` | Chẩn đoán kết nối mạng |
 | `NetSecTool/UnitSearch.cs`, `UnitSearchBox.cs` | Tìm kiếm đơn vị (bỏ dấu tiếng Việt) |
-| `NetSecTool/RemoteSupport.cs` | ★ Engine hỗ trợ kỹ thuật từ xa (UltraVNC) |
+| `NetSecTool/RemoteSupport.cs` | ★ Engine hỗ trợ kỹ thuật từ xa (RustDesk Direct IP) |
 | `NetSecTool/ShellLink.cs` | Tạo shortcut Unicode qua COM IShellLinkW |
 | `Phan tich MiAV/` | Báo cáo phân tích EDR MiAV 4.1.1.2 + script làm sạch log |
 | `report/` | Báo cáo cơ chế MiAV / USB An Toàn (kèm sơ đồ) |
@@ -121,12 +133,12 @@ dotnet publish -c Release -r win-x64 -p:SelfContained=false \
 ## CLI
 
 ```cmd
-Danny-ver5.5.exe --make-safe "J:\"    :: Tạo USB An Toàn 2.6
-Danny-ver5.5.exe --check "J:\"        :: Kiểm tra trạng thái USB an toàn
-Danny-ver5.5.exe --diag [--full]       :: Kiểm tra kết nối mạng
-Danny-ver5.5.exe --clean               :: Làm sạch PC một chạm (kèm cài lại MiAV)
-Danny-ver5.5.exe --remote-listen [--port 5500]              :: Máy nhận kết nối
-Danny-ver5.5.exe --remote-connect --ip <host> [--port 5500] :: Máy cần hỗ trợ
+Danny-ver5.6.exe --make-safe "J:\"    :: Tạo USB An Toàn 2.6
+Danny-ver5.6.exe --check "J:\"        :: Kiểm tra trạng thái USB an toàn
+Danny-ver5.6.exe --diag [--full]       :: Kiểm tra kết nối mạng
+Danny-ver5.6.exe --clean               :: Làm sạch PC một chạm (kèm cài lại MiAV)
+Danny-ver5.6.exe --remote-listen [--port 21118] [--whitelist "IP/CIDR"]   :: Máy nhận kết nối
+Danny-ver5.6.exe --remote-connect --ip <host> [--port 21118]  :: Máy cần hỗ trợ
 ```
 
 ---

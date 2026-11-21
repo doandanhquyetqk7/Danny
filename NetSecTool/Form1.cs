@@ -63,15 +63,14 @@ namespace NetSecTool
         CancellationTokenSource? ctsClean;
         bool cleanRunning;
 
-        // --- Ho tro ky thuat tu xa (UltraVNC) ---
+        // --- Ho tro ky thuat tu xa (RustDesk - Direct IP Access) ---
         Button rdoRemoteReceive = null!, rdoRemoteAssist = null!;
-        TextBox txtRemoteTechIp, txtRemoteListenPort;
+        TextBox txtRemoteTechIp, txtRemoteListenPort, txtRemoteWhitelist, txtRemotePassword;
         Label lblRemoteStatus = null!, lblRemoteLocalIp = null!, lblRemoteHint = null!;
         RichTextBox txtRemoteLog;
         ProgressBar barRemote;
-        Button btnRemotePrepare, btnRemoteStop, btnRemoteProbe, btnRemoteCopyIp;
-        CheckBox chkRemoteDsm, chkRemoteService, chkRemoteShortcut;
-        ComboBox cmbRemoteAdapter;
+        Button btnRemotePrepare, btnRemoteStop, btnRemoteCopyIp;
+        CheckBox chkRemoteService, chkRemoteShortcut, chkRemoteApprove;
 
         public Form1()
         {
@@ -1552,7 +1551,8 @@ namespace NetSecTool
         }
 
         // ==================================================================
-        // TAB 7: HO TRO KY THUAT TU XA (UltraVNC)
+        // ==================================================================
+        // TAB 7: HO TRO KY THUAT TU XA (RustDesk - Direct IP Access)
         // ==================================================================
 
         private void BuildRemoteTab(TabPage tab)
@@ -1567,7 +1567,7 @@ namespace NetSecTool
                 Padding = Padding.Empty
             };
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 176));  // 0 - chon che do
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 214));  // 0 - chon che do + tham so
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 62));   // 1 - thong tin
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 18));   // 2 - progress
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // 3 - log
@@ -1609,18 +1609,18 @@ namespace NetSecTool
                 Margin = Padding.Empty,
                 Padding = new Padding(0, 6, 0, 0)
             };
-            pnlBtns.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-            pnlBtns.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            pnlBtns.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34));
+            pnlBtns.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34));
             pnlBtns.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
             pnlBtns.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-            btnRemotePrepare = MakeButton("CHUẨN BỊ KẾT NỐI", 0, 0, 320, 38, ClrRed);
+            btnRemotePrepare = MakeButton("BẬT HỖ TRỢ TỪ XA", 0, 0, 320, 38, ClrRed);
             btnRemotePrepare.Click += BtnRemotePrepare_Click;
             btnRemotePrepare.Dock = DockStyle.Fill;
             btnRemotePrepare.Margin = new Padding(0, 0, 4, 0);
             pnlBtns.Controls.Add(btnRemotePrepare, 0, 0);
 
-            btnRemoteStop = MakeButton("DỪNG / DọN DẸP", 0, 0, 320, 38, ClrDarkGold);
+            btnRemoteStop = MakeButton("DỪNG / Dọn DẸP", 0, 0, 320, 38, ClrDarkGold);
             btnRemoteStop.Click += BtnRemoteStop_Click;
             btnRemoteStop.Dock = DockStyle.Fill;
             btnRemoteStop.Margin = new Padding(4, 0, 0, 0);
@@ -1636,19 +1636,21 @@ namespace NetSecTool
 
             // Khoi dong cap nhat trang thai ban dau
             SelectRemoteRole(true);
-            RemoteLog("Sẵn sàng. Chọn vai trò của máy này rồi bấm \"CHUẨN BỊ KẾT NỐI\".",
+            RemoteLog("RustDesk 1.5.3 — chế độ Direct IP Access (100% offline, không cần ID server).",
+                RemoteLogKind.Heading);
+            RemoteLog("Sẵn sàng. Chọn vai trò của máy này rồi bấm \"BẬT HỖ TRỢ TỪ XA\".",
                 RemoteLogKind.Step);
             RefreshRemoteStatus();
         }
 
-        /// <summary>Hang 0: chọn vai trò máy + tuỳ chọn chuẩn bị.</summary>
+        /// <summary>Hang 0: chọn vai trò máy + tham so cấu hình Direct IP.</summary>
         private Control BuildRemoteModePanel()
         {
             var tbl = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 2,
-                RowCount = 4,
+                RowCount = 5,
                 BackColor = ClrPanel,
                 Padding = new Padding(12, 6, 12, 6),
                 Margin = Padding.Empty
@@ -1657,8 +1659,9 @@ namespace NetSecTool
             tbl.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 48));
             tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));   // 0 - tieu de
             tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));   // 1 - chon che do
-            tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));   // 2 - tham so
-            tbl.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // 3 - tuy chon
+            tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));   // 2 - tham so ket noi
+            tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));   // 3 - whitelist + port
+            tbl.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // 4 - tuy chon
 
             var lblTitle = new Label
             {
@@ -1710,7 +1713,7 @@ namespace NetSecTool
             tbl.Controls.Add(pnlMode, 0, 1);
             tbl.SetColumnSpan(pnlMode, 2);
 
-            // --- Tham so ---
+            // --- Tham so: dia chi may can ho tro + mat khau ---
             var pnlParam = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
@@ -1721,10 +1724,10 @@ namespace NetSecTool
             pnlParam.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
             pnlParam.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             pnlParam.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
-            pnlParam.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
+            pnlParam.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120));
             pnlParam.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-            pnlParam.Controls.Add(MakeLabel("IP máy kỹ thuật viên:", 0, 8), 0, 0);
+            pnlParam.Controls.Add(MakeLabel("IP máy cần hỗ trợ:", 0, 8), 0, 0);
             txtRemoteTechIp = new TextBox
             {
                 Text = "",
@@ -1735,19 +1738,60 @@ namespace NetSecTool
             };
             pnlParam.Controls.Add(txtRemoteTechIp, 1, 0);
 
-            pnlParam.Controls.Add(MakeLabel("Cổng Listen:", 0, 8), 2, 0);
-            txtRemoteListenPort = new TextBox
+            pnlParam.Controls.Add(MakeLabel("Mật khẩu:", 0, 8), 2, 0);
+            txtRemotePassword = new TextBox
             {
-                Text = RemoteSupport.DefaultListenPort.ToString(),
+                Text = "",
+                Dock = DockStyle.Fill,
+                BorderStyle = BorderStyle.FixedSingle,
+                Font = new Font("Consolas", 9.5f),
+                UseSystemPasswordChar = true,
+                Margin = new Padding(0, 6, 8, 6)
+            };
+            pnlParam.Controls.Add(txtRemotePassword, 3, 0);
+
+            tbl.Controls.Add(pnlParam, 0, 2);
+            tbl.SetColumnSpan(pnlParam, 2);
+
+            // --- Whitelist + port ---
+            var pnlParam2 = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 4,
+                RowCount = 1,
+                Margin = Padding.Empty
+            };
+            pnlParam2.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
+            pnlParam2.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            pnlParam2.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
+            pnlParam2.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
+            pnlParam2.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+            pnlParam2.Controls.Add(MakeLabel("Whitelist IP (dải CIDR):", 0, 8), 0, 0);
+            txtRemoteWhitelist = new TextBox
+            {
+                // Mac dinh: dai IP quan tri Bo CHQS tinh Lam Dong (sua tay duoc)
+                Text = RemoteSupport.DefaultWhitelist,
                 Dock = DockStyle.Fill,
                 BorderStyle = BorderStyle.FixedSingle,
                 Font = new Font("Consolas", 9.5f),
                 Margin = new Padding(0, 6, 8, 6)
             };
-            pnlParam.Controls.Add(txtRemoteListenPort, 3, 0);
+            pnlParam2.Controls.Add(txtRemoteWhitelist, 1, 0);
 
-            tbl.Controls.Add(pnlParam, 0, 2);
-            tbl.SetColumnSpan(pnlParam, 2);
+            pnlParam2.Controls.Add(MakeLabel("Cổng Direct IP:", 0, 8), 2, 0);
+            txtRemoteListenPort = new TextBox
+            {
+                Text = RemoteSupport.DefaultDirectPort.ToString(),
+                Dock = DockStyle.Fill,
+                BorderStyle = BorderStyle.FixedSingle,
+                Font = new Font("Consolas", 9.5f),
+                Margin = new Padding(0, 6, 8, 6)
+            };
+            pnlParam2.Controls.Add(txtRemoteListenPort, 3, 0);
+
+            tbl.Controls.Add(pnlParam2, 0, 3);
+            tbl.SetColumnSpan(pnlParam2, 2);
 
             // --- Tuỳ chọn ---
             var pnlOpts = new TableLayoutPanel
@@ -1762,19 +1806,19 @@ namespace NetSecTool
             pnlOpts.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20));
             pnlOpts.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-            chkRemoteDsm = new CheckBox
+            chkRemoteApprove = new CheckBox
             {
-                Text = "Bật mã hoá DSM (SecureVNC)",
+                Text = "Xin phép thủ công (approve-mode=click)",
                 Checked = true,
                 Dock = DockStyle.Fill,
                 Font = new Font("Segoe UI", 9f),
                 Margin = new Padding(0, 6, 0, 0)
             };
-            pnlOpts.Controls.Add(chkRemoteDsm, 0, 0);
+            pnlOpts.Controls.Add(chkRemoteApprove, 0, 0);
 
             chkRemoteService = new CheckBox
             {
-                Text = "Cài WinVNC thành service",
+                Text = "Cài RustDesk thành service",
                 Checked = true,
                 Dock = DockStyle.Fill,
                 Font = new Font("Segoe UI", 9f),
@@ -1792,7 +1836,7 @@ namespace NetSecTool
             };
             pnlOpts.Controls.Add(chkRemoteShortcut, 2, 0);
 
-            tbl.Controls.Add(pnlOpts, 0, 3);
+            tbl.Controls.Add(pnlOpts, 0, 4);
             tbl.SetColumnSpan(pnlOpts, 2);
 
             return tbl;
@@ -1951,17 +1995,19 @@ namespace NetSecTool
             rdoRemoteAssist.Text = (!isReceive ? ">>  " : "     ")
                 + "MÁY CẦN HỖ TRỢ  (máy quân sự)";
 
-            // Tham so: chi "IP máy KT viên" co y nghia o che do may can ho tro
+            // Tham so: chi "IP may can ho tro" co y nghia o che do may can ho tro
             lblRemoteHint.Text = isReceive
-                ? "Máy này chờ khách gàng kết nối tới. Chạy 'CHUẨN BỊ KẾT NỐI' để mở cổng firewall, "
-                + "tạo shortcut và khởi chạy UltraVNC Viewer ở chế độ lắng nghe. "
+                ? "Máy này chờ khách gàng kết nối tới. Chạy 'BẬT HỖ TRỢ TỪ XA' để mở cổng firewall, "
+                + "ghi cấu hình Direct IP (direct-server=Y) và khởi chạy RustDesk. "
                 + "Sau đó báo cho người dùng IP LAN của máy này (ô bên phải) để họ nhập."
-                : "Máy này cần được hỗ trợ từ xa. Nhập IP máy kỹ thuật viên vào ô bên trái, "
-                + "bấm 'CHUẨN BỊ KẾT NỐI' để cài service WinVNC và mở kết nối ngược.";
+                : "Máy này cần được hỗ trợ từ xa. Nhập IP máy cần hỗ trợ (hoặc IP:Port) vào ô bên trái, "
+                + "bấm 'BẬT HỖ TRỢ TỪ XA' để mở cổng, cấu hình Direct IP và kết nối trực tiếp.";
 
             txtRemoteTechIp.Enabled = !isReceive;
+            txtRemotePassword.Enabled = !isReceive;
             chkRemoteShortcut.Enabled = isReceive;
             chkRemoteService.Enabled = !isReceive;
+            chkRemoteApprove.Enabled = !isReceive;
 
             RefreshRemoteStatus();
         }
@@ -1975,14 +2021,12 @@ namespace NetSecTool
             var probe = RemoteSupport.RunProbe(port);
 
             var parts = new List<string>();
-            parts.Add(probe.ViewerFound ? "UltraVNC: OK" : "UltraVNC: THIẾU");
-            parts.Add(probe.DsmPluginFound
-                ? "Mã hoá DSM: OK"
-                : "Mã hoá DSM: KHÔNG");
+            parts.Add(probe.ClientFound ? "RustDesk: OK" : "RustDesk: THIẾU");
+            parts.Add(probe.DirectServerEnabled ? "Direct IP: BẬT" : "Direct IP: TẮT");
             parts.Add(probe.IsAdministrator ? "Quyền Admin: OK" : "Quyền Admin: THIẾU");
             parts.Add(probe.ServiceInstalled
-                ? (probe.ServiceRunning ? "Service WinVNC: chạy" : "Service WinVNC: dừng")
-                : "Service WinVNC: chưa cài");
+                ? (probe.ServiceRunning ? "Service: chạy" : "Service: dừng")
+                : "Service: chưa cài");
 
             lblRemoteStatus.Text = string.Join("  |  ", parts);
             lblRemoteStatus.ForeColor = probe.Ready ? ClrDarkGreen : ClrRed;
@@ -1997,18 +2041,23 @@ namespace NetSecTool
             }
         }
 
-        /// <summary>Lấy cổng Listen do người dùng nhập, kiểm tra tính hợp lệ.</summary>
+        /// <summary>Lấy cổng Direct IP do người dùng nhập, kiểm tra tính hợp lệ.</summary>
         private int GetRemotePort()
         {
             if (txtRemoteListenPort != null
                 && int.TryParse(txtRemoteListenPort.Text.Trim(), out int p)
                 && p >= 1 && p <= 65535)
                 return p;
-            return RemoteSupport.DefaultListenPort;
+            return RemoteSupport.DefaultDirectPort;
         }
 
+        /// <summary>Lấy whitelist IP do người dùng nhập (có thể để trống).</summary>
+        private string GetRemoteWhitelist()
+            => txtRemoteWhitelist?.Text.Trim() ?? "";
+
         /// <summary>
-        ///  Nút chính: tự động hoá toàn bộ các bước còn lại theo vai trò đã chọn.
+        ///  Nút chính: BẬT HỖ TRỢ TỪ XA.
+        ///  Tự động hoá toàn bộ các bước còn lại theo vai trò đã chọn.
         /// </summary>
         private void BtnRemotePrepare_Click(object? sender, EventArgs e)
         {
@@ -2022,46 +2071,35 @@ namespace NetSecTool
                 bool isReceive = remoteIsReceiver;
 
                 RemoteLog(isReceive
-                    ? "=== CHUẨN BỊ: MÁY NHẬN KẾT NỐI (chờ khách gàng gọi tới) ==="
-                    : "=== CHUẨN BỊ: MÁY CẦN HỖ TRỢ (mở kết nối ngược) ===",
+                    ? "=== BẬT HỖ TRỢ TỪ XA — MÁY NHẬN KẾT NỐI (chờ khách gàng gọi tới) ==="
+                    : "=== BẬT HỖ TRỢ TỪ XA — MÁY CẦN HỖ TRỢ (kết nối trực tiếp) ===",
                     RemoteLogKind.Heading);
 
                 // 0) Kiểm tra công cụ
-                var (viewer, server) = RemoteSupport.LocateExecutables();
-                if (viewer == null || server == null)
+                string? client = RemoteSupport.LocateClient();
+                if (client == null)
                 {
-                    RemoteLog("Không tìm thấy bộ công cụ UltraVNC trong thư mục tools\\UltraVNC.",
+                    RemoteLog("Không tìm thấy rustdesk.exe trong thư mục tools\\RustDesk.",
                         RemoteLogKind.Error);
                     MessageBox.Show(this,
-                        "Không tìm thấy vncviewer.exe / winvnc.exe trong:\n" +
-                        Path.Combine(AppContext.BaseDirectory, "tools", "UltraVNC") +
-                        "\n\nHãy chép lại đầy đủ thư mục tools\\UltraVNC từ bộ cài Danny.",
-                        "Thiếu công cụ UltraVNC", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        "Không tìm thấy rustdesk.exe trong:\n" +
+                        Path.Combine(AppContext.BaseDirectory, "tools", "RustDesk") +
+                        "\n\nHãy chép lại đầy đủ thư mục tools\\RustDesk từ bộ cài Danny.",
+                        "Thiếu công cụ RustDesk", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
-                RemoteLog("Đã tìm thấy bộ công cụ UltraVNC.", RemoteLogKind.Success);
-
-                string uvncDir = Path.GetDirectoryName(viewer)!;
-                string? dsm = chkRemoteDsm.Checked ? RemoteSupport.LocateDsmPlugin(uvncDir) : null;
-                if (chkRemoteDsm.Checked)
-                {
-                    if (dsm != null)
-                        RemoteLog("Plugin mã hoá: " + Path.GetFileName(dsm), RemoteLogKind.Success);
-                    else
-                        RemoteLog("Không có plugin DSM — phiên kết nối sẽ KHÔNG ĐƯỢC MÃ HOÁ. "
-                                + "Nên chép thêm SecureVNCPlugin64.dsm vào thư mục tools\\UltraVNC.",
-                            RemoteLogKind.Warn);
-                }
+                RemoteLog("Đã tìm thấy: " + client, RemoteLogKind.Success);
 
                 int port = GetRemotePort();
+                string whitelist = GetRemoteWhitelist();
 
                 if (isReceive)
                 {
-                    PrepareAsReceiver(viewer, uvncDir, dsm, port);
+                    PrepareAsReceiver(client, port, whitelist);
                 }
                 else
                 {
-                    PrepareAsAssisted(server, uvncDir, dsm, port);
+                    PrepareAsAssisted(client, port, whitelist);
                 }
             }
             catch (Exception ex)
@@ -2079,25 +2117,37 @@ namespace NetSecTool
             }
         }
 
-        /// <summary>Máy nhận kết nối: mở firewall + cấu hình + shortcut + chạy Viewer listen.</summary>
-        private void PrepareAsReceiver(string viewer, string uvncDir, string? dsm, int port)
+        /// <summary>
+        ///  Máy nhận kết nối: mở firewall + cấu hình Direct IP + shortcut + chạy RustDesk.
+        /// </summary>
+        private void PrepareAsReceiver(string client, int port, string whitelist)
         {
             // Buoc 1 - Firewall
             RemoteLog("Buoc 1/4: Mo cong TCP " + port + " trong Windows Defender Firewall...",
                 RemoteLogKind.Step);
-            var fw = RemoteSupport.OpenFirewallPort(port);
+            var fw = RemoteSupport.OpenFirewallPort(port, whitelist);
             LogAction(fw);
 
-            // Buoc 2 - ultravnc.ini
-            RemoteLog("Buoc 2/4: Cap nhat ultravnc.ini...", RemoteLogKind.Step);
-            var ini = RemoteSupport.WriteIni(uvncDir, dsm, port);
-            LogAction(ini);
+            // Buoc 2 - Cau hinh RustDesk2.toml (Direct IP Access)
+            RemoteLog("Buoc 2/4: Ghi cau hinh Direct IP Access (RustDesk2.toml)...",
+                RemoteLogKind.Step);
+            bool asService = chkRemoteService.Checked && RemoteSupport.IsAdministrator();
+            var cfg = RemoteSupport.ApplyDirectIpConfig(port, whitelist,
+                approveMode: chkRemoteApprove.Checked ? "click" : "password-click",
+                verificationMethod: "use-temporary-password",
+                asService: asService);
+            LogAction(cfg);
+            RemoteLog("Cấu hình dùng cho: " + RemoteSupport.OptionsFilePath(asService),
+                RemoteLogKind.Info);
+            RemoteLog("Lưu ý: trong cửa sổ RustDesk, trạng thái \"Not ready\" màu đỏ là BÌNH THƯỜNG "
+                    + "khi chạy offline ở chế độ Direct IP — không phải lỗi.",
+                RemoteLogKind.Info);
 
             // Buoc 3 - Shortcut
             if (chkRemoteShortcut.Checked)
             {
-                RemoteLog("Buoc 3/4: Tao shortcut UltraVNC tren Desktop...", RemoteLogKind.Step);
-                var lnk = RemoteSupport.CreateListenShortcut(viewer, port, dsm);
+                RemoteLog("Buoc 3/4: Tao shortcut RustDesk tren Desktop...", RemoteLogKind.Step);
+                var lnk = RemoteSupport.CreateHostShortcut(client, port);
                 LogAction(lnk);
             }
             else
@@ -2105,99 +2155,146 @@ namespace NetSecTool
                 RemoteLog("Buoc 3/4: Bo qua tao shortcut (theo tu chon).", RemoteLogKind.Step);
             }
 
-            // Buoc 4 - Chay Viewer o che do listen
-            RemoteLog("Buoc 4/4: Khoi chay UltraVNC Viewer o che do lang nghe...", RemoteLogKind.Step);
-            var lst = RemoteSupport.StartListener(viewer, port, dsm);
-            LogAction(lst);
+            // Buoc 4 - Service (neu co quyen Admin) + khoi chay RustDesk
+            if (chkRemoteService.Checked)
+            {
+                if (RemoteSupport.IsAdministrator())
+                {
+                    RemoteLog("Buoc 4/4: Cai RustDesk thanh service de ho tro ca khi dang xuat...",
+                        RemoteLogKind.Step);
+                    var svc = RemoteSupport.InstallService(client);
+                    LogAction(svc);
+                    var st = RemoteSupport.SetServiceState(true);
+                    LogAction(st);
+                }
+                else
+                {
+                    RemoteLog("Buoc 4/4: Khong co quyen Administrator — chay o che do portable thong thuong.",
+                        RemoteLogKind.Warn);
+                    RemoteLog("  → Không thao tác được trên cửa sổ UAC của máy khác. "
+                            + "Để có quyền đầy đủ, hãy chạy Danny với quyền Administrator.",
+                        RemoteLogKind.Warn);
+                    var host = RemoteSupport.StartHost(client);
+                    LogAction(host);
+                }
+            }
+            else
+            {
+                RemoteLog("Buoc 4/4: Bo qua cai service — khoi chay RustDesk o che do portable...",
+                    RemoteLogKind.Step);
+                var host = RemoteSupport.StartHost(client);
+                LogAction(host);
+            }
 
-            // Cho socket cua Viewer bind xong truoc khi kiem tra
+            // Cho socket bind xong truoc khi kiem tra
             RemoteLog("Doi cong " + port + " san sang...", RemoteLogKind.Step);
-            bool ready = RemoteSupport.WaitForPort(port, 10000);
+            bool ready = RemoteSupport.WaitForPort(port, 15000);
 
-            // Ket luan
             var probe = RemoteSupport.RunProbe(port);
             RemoteLog("──────────────────────────────────────────────", RemoteLogKind.Heading);
             if (ready && probe.PortListening)
             {
                 RemoteLog("DA SAN SANG NHAN KET NOI tren cong " + port + ".", RemoteLogKind.Success);
                 RemoteLog("Bao cho nguoi dung IP: " + probe.LocalIPv4
-                        + "  (cong " + port + ") — ho doi 'Add New Client' tren may ho tro.",
+                        + "  (cong " + port + ") — ho nhập vào ô \"IP máy cần hỗ trợ\" "
+                        + "trên máy kỹ thuật viên rồi bấm BẬT HỖ TRỢ TỪ XA.",
                     RemoteLogKind.Info);
             }
             else
             {
-                RemoteLog("Viewer da chay nhung cong " + port
+                RemoteLog("RustDesk da chay nhung cong " + port
                         + " chua san sang. Kiem tra lai Windows Defender Firewall.",
                     RemoteLogKind.Warn);
             }
+
             MessageBox.Show(this,
                 "Máy nhận kết nối đã sẵn sàng.\n\n" +
                 "IP LAN của máy này: " + probe.LocalIPv4 + "\n" +
-                "Cổng lắng nghe: " + port + "\n\n" +
-                "Hãy gửi IP cho người dùng, họ nhập vào ô \"IP máy kỹ thuật viên\"\n" +
-                "trên máy cần hỗ trợ rồi bấm CHUẨN BỊ KẾT NỐI.",
+                "Cổng Direct IP: " + port + "\n\n" +
+                "Hãy gửi IP cho người dùng, họ nhập vào ô \"IP máy cần hỗ trợ\"\n" +
+                "trên máy kỹ thuật viên rồi bấm BẬT HỖ TRỢ TỪ XA.",
                 "Sẵn sàng nhận kết nối", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
-        /// <summary>Máy cần hỗ trợ: cài service + cấu hình + mở kết nối ngược.</summary>
-        private void PrepareAsAssisted(string server, string uvncDir, string? dsm, int port)
+        /// <summary>
+        ///  Máy cần hỗ trợ: mở firewall + cấu hình Direct IP + kết nối trực tiếp.
+        /// </summary>
+        private void PrepareAsAssisted(string client, int port, string whitelist)
         {
-            string techIp = txtRemoteTechIp.Text.Trim();
-            if (!RemoteSupport.IsValidIPv4(techIp) && !RemoteSupport.IsSafeHost(techIp))
+            string target = txtRemoteTechIp.Text.Trim();
+            if (!RemoteSupport.IsValidTarget(target))
             {
-                RemoteLog("IP máy kỹ thuật viên không hợp lệ: \"" + techIp + "\".",
+                RemoteLog("Địa chỉ máy cần hỗ trợ không hợp lệ: \"" + target + "\".",
                     RemoteLogKind.Error);
                 MessageBox.Show(this,
-                    "IP máy kỹ thuật viên không hợp lệ.\n\n" +
-                    "Vui lòng nhập địa chỉ IPv4 (VD: 192.168.1.55) của máy kỹ thuật viên.",
+                    "Địa chỉ không hợp lệ.\n\n" +
+                    "Vui lòng nhập địa chỉ IPv4 (VD: 86.134.32.55) hoặc IPv4:Port\n" +
+                    "(VD: 86.134.32.55:21118) của máy cần hỗ trợ.",
                     "Sai địa chỉ IP", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            // Buoc 1 - Firewall (may can ho tro cung can mo cong neu co chien dau)
+            // Buoc 1 - Firewall
             RemoteLog("Buoc 1/4: Mo cong TCP " + port + " trong Windows Defender Firewall...",
                 RemoteLogKind.Step);
-            var fw = RemoteSupport.OpenFirewallPort(port);
+            var fw = RemoteSupport.OpenFirewallPort(port, whitelist);
             LogAction(fw);
 
-            // Buoc 2 - ultravnc.ini
-            RemoteLog("Buoc 2/4: Cap nhat ultravnc.ini...", RemoteLogKind.Step);
-            string serviceCmd = $"-autoreconnect -connect {techIp}::{port}";
-            var ini = RemoteSupport.WriteIni(uvncDir, dsm, port, serviceCmd);
-            LogAction(ini);
+            // Buoc 2 - Cau hinh RustDesk2.toml
+            RemoteLog("Buoc 2/4: Ghi cau hinh Direct IP Access (RustDesk2.toml)...",
+                RemoteLogKind.Step);
+            bool asService = chkRemoteService.Checked && RemoteSupport.IsAdministrator();
+            var cfg = RemoteSupport.ApplyDirectIpConfig(port, whitelist,
+                approveMode: chkRemoteApprove.Checked ? "click" : "password-click",
+                verificationMethod: "use-temporary-password",
+                asService: asService);
+            LogAction(cfg);
 
-            // Buoc 3 - Service WinVNC
+            // Buoc 3 - Service (neu co quyen Admin)
             if (chkRemoteService.Checked)
             {
-                RemoteLog("Buoc 3/4: Cai WinVNC thanh service de ho tro ca khi dang xuat...",
-                    RemoteLogKind.Step);
-                var svc = RemoteSupport.InstallService(server);
-                LogAction(svc);
-
-                var st = RemoteSupport.SetServiceState(true);
-                LogAction(st);
+                if (RemoteSupport.IsAdministrator())
+                {
+                    RemoteLog("Buoc 3/4: Cai RustDesk thanh service de ho tro ca khi dang xuat...",
+                        RemoteLogKind.Step);
+                    var svc = RemoteSupport.InstallService(client);
+                    LogAction(svc);
+                    var st = RemoteSupport.SetServiceState(true);
+                    LogAction(st);
+                }
+                else
+                {
+                    RemoteLog("Buoc 3/4: Khong co quyen Administrator — chay o che do portable thong thuong.",
+                        RemoteLogKind.Warn);
+                    var host = RemoteSupport.StartHost(client);
+                    LogAction(host);
+                }
             }
             else
             {
-                RemoteLog("Buoc 3/4: Bo qua cai service (theo tu chon).", RemoteLogKind.Step);
+                RemoteLog("Buoc 3/4: Bo qua cai service.", RemoteLogKind.Step);
+                var host = RemoteSupport.StartHost(client);
+                LogAction(host);
             }
 
-            // Buoc 4 - Ket noi nguoc
-            RemoteLog("Buoc 4/4: Mo ket noi nguoc toi " + techIp + ":" + port + "...",
+            // Buoc 4 - Ket noi truc tiep
+            RemoteLog("Buoc 4/4: Mo ket noi truc tiep toi " + target + "...",
                 RemoteLogKind.Step);
-            var conn = RemoteSupport.ConnectReverse(server, techIp, port);
+            string password = txtRemotePassword?.Text.Trim() ?? "";
+            var conn = RemoteSupport.ConnectDirect(client, target, port,
+                string.IsNullOrWhiteSpace(password) ? null : password);
             LogAction(conn);
 
             RemoteLog("──────────────────────────────────────────────", RemoteLogKind.Heading);
-            RemoteLog("Đã gửi lệnh kết nối ngược tới " + techIp + ":" + port + ".", RemoteLogKind.Success);
+            RemoteLog("Đã gửi lệnh kết nối trực tiếp tới " + target + ".", RemoteLogKind.Success);
             RemoteLog("Màn hình máy này sẽ hiện trên máy kỹ thuật viên trong vài giây. "
-                    + "Nếu chưa thấy, hãy kiểm tra máy kỹ thuật viên đã bật chế độ lắng nghe chưa.",
+                    + "Nếu máy bên kia bật chế độ xin phép, người dùng phải bấm \"Đồng ý\".",
                 RemoteLogKind.Info);
             MessageBox.Show(this,
-                "Đã gửi lệnh kết nối ngược tới " + techIp + ":" + port + ".\n\n" +
+                "Đã gửi lệnh kết nối trực tiếp tới " + target + ".\n\n" +
                 "Vui lòng chờ trên máy kỹ thuật viên.\n" +
                 "Nếu kết nối không thành công, hãy kiểm tra lại IP và cổng.",
-                "Đã kết nối ngược", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                "Đã kết nối", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         /// <summary>Chép IP LAN của máy này vào clipboard.</summary>
@@ -2228,11 +2325,8 @@ namespace NetSecTool
         {
             RemoteLog("=== DỪNG & DỌN DẸP ===", RemoteLogKind.Heading);
 
-            var v = RemoteSupport.StopViewer();
-            LogAction(v);
-
-            var s = RemoteSupport.StopServer();
-            LogAction(s);
+            var c = RemoteSupport.StopClient();
+            LogAction(c);
 
             int port = GetRemotePort();
             var fw = RemoteSupport.CloseFirewallPort(port);
@@ -2254,30 +2348,33 @@ namespace NetSecTool
         {
             string role = remoteIsReceiver ? "MÁY NHẬN KẾT NỐI" : "MÁY CẦN HỖ TRỢ";
             MessageBox.Show(this,
-                "HỖ TRỢ KỸ THUẬT TỪ XA (UltraVNC 1.4.2.0 Portable)\n" +
-                "═══════════════════════════════════════════\n\n" +
+                "HỖ TRỢ KỸ THUẬT TỪ XA (RustDesk 1.5.3 — Direct IP Access)\n" +
+                "════════════════════════════════════════════════════\n\n" +
                 "Vai trò hiện tại: " + role + "\n\n" +
                 "MÁY NHẬN KẾT NỐI (máy kỹ thuật viên):\n" +
                 "  1. Chọn vai trò \"Máy nhận kết nối\".\n" +
-                "  2. Bấm CHUẨN BỊ KẾT NỐI → phần mềm tự mở firewall cổng 5500,\n" +
-                "     ghi ultravnc.ini, tạo shortcut và chạy vncviewer ở chế độ -listen.\n" +
+                "  2. Bấm BẬT HỖ TRỢ TỪ XA → phần mềm tự mở firewall cổng 21118,\n" +
+                "     ghi cấu hình direct-server='Y', tạo shortcut và chạy RustDesk.\n" +
                 "  3. Chép IP LAN của máy này (ô \"IP máy này\") gửi cho người dùng.\n\n" +
                 "MÁY CẦN HỖ TRỢ (máy quân sự):\n" +
                 "  1. Chọn vai trò \"Máy cần hỗ trợ\".\n" +
-                "  2. Nhập IP máy kỹ thuật viên và cổng 5500.\n" +
-                "  3. Bấm CHUẨN BỊ KẾT NỐI → phần mềm cài service WinVNC,\n" +
-                "     cấu hình ultravnc.ini và mở kết nối ngược (-connect ip::port).\n\n" +
-                "LƯU Ý BẢO MẬT:\n" +
-                "  • Bật mã hoá DSM (SecureVNCPlugin64.dsm) để tránh bị bắt gói tin trong LAN.\n" +
-                "  • Đặt mật khẩu VNC khác mật khẩu Windows của máy.\n" +
-                "  • Chỉ dùng trong mạng nội bộ của đơn vị.\n\n" +
+                "  2. Nhập IP máy cần hỗ trợ (VD: 86.134.32.55 hoặc 86.134.32.55:21118).\n" +
+                "  3. Bấm BẬT HỖ TRỢ TỪ XA → phần mềm mở cổng, cấu hình Direct IP\n" +
+                "     và chạy: rustdesk.exe --connect <IP>:<Port>.\n\n" +
+                "CHẾ ĐỘ OFFLINE (100%):\n" +
+                "  • Không dùng ID/Relay Server trung gian — kết nối thẳng qua IP LAN.\n" +
+                "  • Trạng thái \"Not ready\" màu đỏ trong cửa sổ RustDesk là BÌNH THƯỜNG\n" +
+                "    khi chạy offline ở chế độ Direct IP — không phải lỗi.\n\n" +
+                "BẢO MẬT:\n" +
+                "  • \"Xin phép thủ công\" (approve-mode=click): máy bên kia phải bấm Đồng ý.\n" +
+                "  • Whitelist IP giới hạn chỉ IP/CIDR được phép kết nối (mặc định dải quản trị).\n" +
+                "  • Mật khẩu tạm thời của RustDesk dùng thay mật khẩu Windows.\n" +
+                "  • Bấm \"DỪNG / Dọn DẸP\" để dừng tiến trình và xóa rule firewall.\n\n" +
                 "Nếu kết nối không được: kiểm tra Windows Defender Firewall, tiến trình\n" +
-                "vncviewer có đang chạy, và IP máy kỹ thuật viên đã đúng chưa.",
+                "rustdesk có đang chạy, IP/port có đúng không.",
                 "Hướng dẫn - Hỗ trợ kỹ thuật từ xa",
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
-
-        // ==================================================================
         // TAB 4: BAO MAT & TIEN ICH
         // ==================================================================
 
