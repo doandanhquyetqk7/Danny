@@ -16,6 +16,21 @@
     <Version>5.6.0</Version>
     <FileVersion>5.6.0.0</FileVersion>
     <AssemblyVersion>5.6.0.0</AssemblyVersion>
+    <!--
+      Pin InformationalVersion thu cong de ProductVersion khong bi gan
+      hash commit (SDK mac dinh sinh "5.6.0+<sha>"). Neu dung hash, moi
+      lan build sau commit se lam metadata bi cu, va phai build lai
+      + upload lai asset (mat ~15 phút moi lan).
+      Ban nay giu phien ban co dinh -> build bao gio cung dung version.
+    -->
+    <InformationalVersion>5.6.0</InformationalVersion>
+    <!--
+      IncludeSourceRevisionInInformationalVersion=false: mac dinh cua .NET SDK
+      tu ghep SourceRevisionId (hash commit) vao cuoi InformationalVersion,
+      tao ra chuoi dang "5.6.0+<sha>". Tat de ProductVersion luon la
+      "5.6.0" co dinh, khong phai rebuild moi khi commit.
+    -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Description>Trợ lý Công nghệ Thông tin - Trung tá Đoàn Danh Quyết</Description>
   </PropertyGroup>
 
