@@ -18,6 +18,10 @@ static class Program
     ///      Danny.exe --clean
     ///      Danny.exe --remote-listen [--port 21118] [--whitelist "86.134.32.150/24"]
     ///      Danny.exe --remote-connect --ip 192.168.1.55 [--port 21118] [--whitelist "..."]
+    ///      Danny.exe --kvrt-update
+    ///      Danny.exe --uncover "D:\" [--no-recursive] [--dry-run]
+    ///      Danny.exe --backup --target E: [--no-system-image] [--no-user-data] [--dry-run]
+    ///      Danny.exe --forensic [--out "C:\Bao-cao"]
     ///
     ///  Ket qua duoc ghi ra STDOUT. Che do CLI KHONG hien bat ky hop thoai
     ///  nao (khong MessageBox) - phu hop voi viec chay tu dong.
@@ -105,6 +109,12 @@ static class Program
         bool noBrowser = false, noSrum = false, noDns = false, noPrefetch = false,
              noAmcache = false, noRunMru = false, noJumpList = false, noEventLog = false,
              noMiAV = false, noKvrt = false, reboot = false, noInstallMiAV = false;
+        // Ver5.7
+        string backupTarget = "";
+        string forensicOut = "";
+        bool noSystemImage = false, noUserData = false, dryRun = false;
+        bool noRecursive = false, dryRunUncover = false;
+        string acronisEngine = "";
 
         for (int i = 1; i < args.Length; i++)
         {
@@ -133,6 +143,14 @@ static class Program
                 case "--reboot": reboot = true; break;
                 case "--port": if (i + 1 < args.Length && int.TryParse(args[++i], out int pv)) port = pv; break;
                 case "--no-service": noService = true; break;
+                // --- Ver5.7 ---
+                case "--target": if (i + 1 < args.Length) backupTarget = args[++i]; break;
+                case "--out": if (i + 1 < args.Length) forensicOut = args[++i]; break;
+                case "--acronis": if (i + 1 < args.Length) acronisEngine = args[++i]; break;
+                case "--no-system-image": noSystemImage = true; break;
+                case "--no-user-data": noUserData = true; break;
+                case "--dry-run": dryRun = true; break;
+                case "--no-recursive": noRecursive = true; break;
                 default:
                     if (args[i].StartsWith("--")) break;
                     root = args[i];
@@ -354,6 +372,124 @@ static class Program
                     break;
                 }
 
+            case "--kvrt-update":
+                {
+                    Say("=== DANNY ver5.7 - CAP NHAT KVRT ===");
+                    var res = KvrtUpdater.UpdateAsync(m => Say("  " + m), null, CancellationToken.None)
+                                          .GetAwaiter().GetResult();
+                    foreach (string s in res.Steps) Say("  " + s);
+                    Say();
+                    Say(res.Message);
+                    break;
+                }
+
+            case "--uncover":
+                {
+                    if (string.IsNullOrWhiteSpace(root))
+                    {
+                        Say("LOI: thieu duong dan. Vi du: --uncover \"D:\\\"");
+                        break;
+                    }
+                    if (!root.EndsWith("\\")) root += "\\";
+
+                    Say("=== DANNY ver5.7 - HIEN FILE/FOLDER AN ===");
+                    Say($"Dung dich  : {root}");
+                    Say($"De quy    : {(noRecursive ? "KHONG" : "CO")}");
+                    Say($"Che do    : {(dryRunUncover ? "DRY-RUN (xem truoc)" : "KHOI PHUC THAT")}");
+                    Say();
+
+                    var r = UncoverFiles.Scan(root, !noRecursive, dryRunUncover, null, CancellationToken.None);
+                    foreach (UncoverItem it in r.Items)
+                    {
+                        Say($"  {(it.Restored ? "[ OK ]" : "[ -- ]")} {it.FullPath}" +
+                            (it.Note != null ? " — " + it.Note : ""));
+                    }
+                    Say();
+                    Say(r.Restored > 0
+                        ? $"Da khoi phuc {r.Restored} muc, loi {r.Failed}, xem truoc {r.Skipped}"
+                        : $"Khong co muc an nao de khoi phuc (loi {r.Failed})");
+                    break;
+                }
+
+            case "--backup":
+                {
+                    if (string.IsNullOrWhiteSpace(backupTarget))
+                    {
+                        Say("LOI: thieu o dia dich. Vi du: --backup --target E:");
+                        break;
+                    }
+
+                    Say("=== DANNY ver5.7 - SAO LUU MAY TINH ===");
+                    Say("Quet o dia vat ly...");
+                    var scan = BackupService.ScanDisks();
+                    foreach (PhysicalDisk d in scan.Disks)
+                    {
+                        Say($"  {d.DeviceId,-12} {d.Model,-32} {d.SizeText,-10} " +
+                            $"[{d.InterfaceType}] o: {string.Join(",", d.DriveLetters)} " +
+                            $"{(d.IsExternal ? "DI DONG" : "GAN TRONG")}");
+                    }
+                    Say();
+                    foreach (string e in scan.Errors) Say("  [WMI] " + e);
+                    foreach (string e in scan.Rejected) Say("  [TU CHOI] " + e);
+                    Say();
+
+                    string? reject = BackupService.ValidateTarget(backupTarget, out PhysicalDisk? target);
+                    if (reject != null)
+                    {
+                        Say("LOI: " + reject);
+                        break;
+                    }
+                    Say($"O dich hop le: {target!.Model} ({target.SizeText})");
+                    Say();
+
+                    var opt = new BackupOptions
+                    {
+                        TargetDrive = backupTarget,
+                        BackupSystemImage = !noSystemImage,
+                        BackupUserData = !noUserData,
+                        AcronisEnginePath = acronisEngine,
+                        MachineName = Environment.MachineName,
+                        DryRun = dryRun
+                    };
+
+                    var res = BackupService.RunAsync(opt,
+                        m => Say("  " + m), null, CancellationToken.None)
+                        .GetAwaiter().GetResult();
+
+                    foreach (string e in res.Errors) Say("[LOI]  " + e);
+                    foreach (string w in res.Warnings) Say("[CANH BAO] " + w);
+                    Say();
+                    Say(res.Message);
+                    break;
+                }
+
+            case "--forensic":
+                {
+                    Say("=== DANNY ver5.7 - KIEM TRA AN TOAN THONG TIN (FORENSIC) ===");
+                    Say("Che do: CHI DOC — khong sua/xoa du lieu tren may.");
+                    Say();
+
+                    var opt = new Forensic.ForensicOptions
+                    {
+                        OutputDirectory = forensicOut,
+                        SkipLargeFileHashing = false
+                    };
+
+                    var bundle = Forensic.ForensicEngine.RunAsync(opt,
+                        m => Say("  " + m), null, CancellationToken.None)
+                        .GetAwaiter().GetResult();
+
+                    Say();
+                    Say($"Diem ngo ngo: {bundle.TotalScore}/100");
+                    Say(bundle.Verdict);
+                    Say($"Phat hien: {bundle.Findings.Count} " +
+                        $"(CRITICAL {bundle.Findings.Count(f => f.Severity == Forensic.Severity.Critical)}, " +
+                        $"HIGH {bundle.Findings.Count(f => f.Severity == Forensic.Severity.High)})");
+                    Say($"Artifact: {bundle.Artifacts.Count}, su kien timeline: {bundle.Timeline.Count}");
+                    Say($"Goi chung cu: {bundle.OutputDirectory}");
+                    break;
+                }
+
             default:
                 Say("LOI: lenh khong hop le: " + cmd);
                 Say("Cac lenh ho tro:");
@@ -363,6 +499,10 @@ static class Program
                 Say("  --clean [--no-kvrt]  Lam sach PC mot cham (xoa log, quet KVRT, cai lai MiAV)");
                 Say("  --remote-listen [--port 21118] [--whitelist \"IP/CIDR\"]   May nhan ket noi (RustDesk Direct IP)");
                 Say("  --remote-connect --ip X.X.X.X [--port 21118] [--whitelist \"IP/CIDR\"]  May can ho tro (ket noi truc tiep)");
+                Say("  --kvrt-update              Cap nhat Kaspersky KVRT (tu dong, co xac thuc chu ky so)");
+                Say("  --uncover \"X:\\\" [--no-recursive] [--dry-run]   Hien file/thu muc an");
+                Say("  --backup --target E: [--no-system-image] [--no-user-data] [--dry-run]  Sao luu may tinh (Acronis + Robocopy)");
+                Say("  --forensic [--out \"C:\\Bao-cao\"]          Kiem tra an toan thong tin (phap y so DFIR)");
                 break;
         }
     }

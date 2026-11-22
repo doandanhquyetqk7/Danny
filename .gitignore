@@ -22,6 +22,22 @@ Danny-ver4.0/
 Danny-ver1.0.zip
 Danny-ver4.0.zip
 
+# ---- Build/publish output of build_and_publish.ps1 ----
+# dist/ la thu muc lam trung gian (publish-sc / publish-fd). Ban phat hanh
+# thuc te duoc copy ra Danny-ver5.7/ va commit bang Git LFS nhu cac phien
+# ban truoc (5.0 / 5.5 / 5.6).
+dist/
+
+# ---- Du lieu mau KTATTT / ATTT (du lieu kiem tra cua don vi, ~2000 file JSON) ----
+# Chi tai lieu. Khong commit vao repo de giu nho gon va tranh ro ri du lieu
+# nhay cam cua nguoi dung.
+Kiem tra ATTT/
+Kiem tra ATTT/*.rar
+
+# ---- Forensic output mau (du lieu nhay cam, tu sinh khi chay --forensic) ----
+Bao-cao-dieu-tra/
+forensic-output/
+
 # ---- Reverse-skill scratch ----
 reverse-skill-main/**/node_modules/
 reverse-skill-main/**/__pycache__/

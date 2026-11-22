@@ -10,25 +10,25 @@
     <ApplicationIcon>QDND.ico</ApplicationIcon>
     <AssemblyName>Danny</AssemblyName>
     <RootNamespace>NetSecTool</RootNamespace>
-    <Product>Danny ver5.6 - Trợ lý Công nghệ Thông tin</Product>
-    <AssemblyTitle>Danny ver5.6 - Trợ lý Công nghệ Thông tin</AssemblyTitle>
+    <Product>Danny ver5.7 - Trợ lý Công nghệ Thông tin</Product>
+    <AssemblyTitle>Danny ver5.7 - Trợ lý Công nghệ Thông tin</AssemblyTitle>
     <Company>Bộ Chỉ huy Quân sự tỉnh Lâm Đồng</Company>
-    <Version>5.6.0</Version>
-    <FileVersion>5.6.0.0</FileVersion>
-    <AssemblyVersion>5.6.0.0</AssemblyVersion>
+    <Version>5.7.0</Version>
+    <FileVersion>5.7.0.0</FileVersion>
+    <AssemblyVersion>5.7.0.0</AssemblyVersion>
     <!--
       Pin InformationalVersion thu cong de ProductVersion khong bi gan
-      hash commit (SDK mac dinh sinh "5.6.0+<sha>"). Neu dung hash, moi
+      hash commit (SDK mac dinh sinh "5.7.0+<sha>"). Neu dung hash, moi
       lan build sau commit se lam metadata bi cu, va phai build lai
       + upload lai asset (mat ~15 phút moi lan).
       Ban nay giu phien ban co dinh -> build bao gio cung dung version.
     -->
-    <InformationalVersion>5.6.0</InformationalVersion>
+    <InformationalVersion>5.7.0</InformationalVersion>
     <!--
       IncludeSourceRevisionInInformationalVersion=false: mac dinh cua .NET SDK
       tu ghep SourceRevisionId (hash commit) vao cuoi InformationalVersion,
-      tao ra chuoi dang "5.6.0+<sha>". Tat de ProductVersion luon la
-      "5.6.0" co dinh, khong phai rebuild moi khi commit.
+      tao ra chuoi dang "5.7.0+<sha>". Tat de ProductVersion luon la
+      "5.7.0" co dinh, khong phai rebuild moi khi commit.
     -->
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Description>Trợ lý Công nghệ Thông tin - Trung tá Đoàn Danh Quyết</Description>
@@ -114,4 +114,32 @@
           CopyToPublishDirectory="PreserveNewest"
           ExcludeFromSingleFile="true" />
   </ItemGroup>
+
+  <!--
+    ============================================================
+    VER5.7 - BO QUY TAC FORENSIC (cho tab "KIEM TRA AN TOAN THONG TIN")
+
+    File tools\rules\forensic-rules.json chua bo quy tac phat hien
+    Internet trai phep / lo rot tai lieu / anti-forensics. Nguoi dung
+    co the sua file nay ma KHONG can build lai phan mem.
+
+    Neu file khong ton tai, phan mem tu dung bo quy tac mac dinh
+    hard-code trong Forensic\ForensicModels.cs.
+  -->
+  <ItemGroup>
+    <None Include="Resources\rules\forensic-rules.json" Link="tools\rules\forensic-rules.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
+  <!--
+    ============================================================
+    VER5.7 - ENGINE ACRO NIS (cho tab "SAO LUU MAY TINH")
+
+    tools\acronis\*.exe KHONG embed trong exe ban phan phoi vi
+    ban single-file se tro len rất nang (~120 MB + .NET runtime).
+    Nguoi dung dat rieng thu muc tools\acronis\ canh phan mem, hoac
+    cai Acronis True Image roi tro duong dan trong giao dien.
+  -->
 </Project>
