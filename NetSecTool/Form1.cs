@@ -27,12 +27,9 @@ namespace NetSecTool
         private static readonly Color ClrLogBlue = Color.FromArgb(120, 200, 235);
 
         // --- Controls ---
-        TextBox txtAdapter, txtIP, txtSubnet, txtGateway, txtDNS;
-        ComboBox cmbDrives;
         ComboBox cmbUsbDrives;
         TextBox txtVersion, txtVendor, txtSeed;
         RichTextBox txtLog;
-        Button btnChangeIP, btnRunKVRT, btnRefreshDrives, btnUncoverFiles, btnClearLogs;
         Button btnMakeUsbSafe, btnCheckUsbSafe, btnUnlockUsb;
         Label lblUsbInfo;
 
@@ -47,6 +44,7 @@ namespace NetSecTool
         ComboBox cmbDiagAdapter;
         UnitSearchBox searchDiagUnit;
         Label lblDiagUnitInfo;
+        TextBox txtDiagIp, txtDiagGateway;
         Button btnRunDiag, btnSaveReport, btnDiagQuick, btnDiagFull, btnRefreshAdapters;
         RichTextBox txtDiagLog;
         Label lblDiagSummary;
@@ -57,11 +55,16 @@ namespace NetSecTool
         RichTextBox txtCleanLog;
         ProgressBar barClean;
         Label lblCleanSummary;
-        CheckBox chkCleanBrowser = null!, chkCleanSrum = null!, chkCleanDns = null!, chkCleanPrefetch = null!,
-                      chkCleanAmcache = null!, chkCleanRunMru = null!, chkCleanJumpList = null!, chkCleanEventLog = null!,
-                      chkCleanMiAV = null!, chkCleanKvrt = null!, chkCleanReboot = null!, chkInstallMiAV = null!;
+        CheckBox chkCleanV57Step1 = null!, chkCleanV57Step2 = null!, chkCleanV57Step3 = null!,
+                      chkCleanV57Step4 = null!, chkCleanKvrt = null!;
+        Label lblCleanAdmin = null!;
         CancellationTokenSource? ctsClean;
         bool cleanRunning;
+
+        // --- Cap nhat KVRT (Ver5.7) ---
+        Button btnRunKVRT = null!, btnKvrtUpdate = null!;
+        Label lblKvrtStatus = null!;
+        CheckBox chkKvrtAutoUpdate = null!;
 
         // --- Ho tro ky thuat tu xa (RustDesk - Direct IP Access) ---
         Button rdoRemoteReceive = null!, rdoRemoteAssist = null!;
@@ -76,6 +79,10 @@ namespace NetSecTool
         {
             InitializeComponent();
             SetupUI();
+
+            // Ver5.7: tu dong cap nhat KVRT o luong nen (fail-soft, khong chan UI).
+            // Chi chay khi co Internet - offline se bi bo qua am tham.
+            Shown += (s, e) => AutoUpdateKvrtOnStartup();
         }
 
         // ==================================================================
@@ -119,7 +126,6 @@ namespace NetSecTool
             root.Controls.Add(BuildTabs(), 0, 1);
             root.Controls.Add(BuildFooter(), 0, 2);
 
-            LoadDrives();
             LoadUsbDrives();
             LoadDiagAdapters();
         }
@@ -277,12 +283,6 @@ namespace NetSecTool
                 Font = new Font("Segoe UI", 9f),
                 Padding = new Padding(10)
             };
-            var tabNet = new TabPage("  CẤU HÌNH MẠNG  ")
-            {
-                BackColor = ClrBg,
-                Font = new Font("Segoe UI", 9f),
-                Padding = new Padding(10)
-            };
             var tabTools = new TabPage("  BẢO MẬT & TIỆN ÍCH  ")
             {
                 BackColor = ClrBg,
@@ -302,6 +302,26 @@ namespace NetSecTool
                 Padding = new Padding(10)
             };
 
+            // --- Ver5.7: cac tab moi ---
+            var tabUncover = new TabPage("  HIỆN FILE/FOLDER ẨN  ")
+            {
+                BackColor = ClrBg,
+                Font = new Font("Segoe UI", 9f),
+                Padding = new Padding(10)
+            };
+            var tabBackup = new TabPage("  SAO LƯU MÁY TÍNH  ")
+            {
+                BackColor = ClrBg,
+                Font = new Font("Segoe UI", 9f),
+                Padding = new Padding(10)
+            };
+            var tabForensic = new TabPage("  KIỂM TRA AN TOÀN TT  ")
+            {
+                BackColor = ClrBg,
+                Font = new Font("Segoe UI", 9f),
+                Padding = new Padding(10)
+            };
+
             // An bang goi y cua o tim kiem khi nguoi dung doi tab
             tabs.SelectedIndexChanged += (s, e) =>
             {
@@ -312,18 +332,22 @@ namespace NetSecTool
             tabs.TabPages.Add(tabDiag);
             tabs.TabPages.Add(tabUsb);
             tabs.TabPages.Add(tabOneClick);
-            tabs.TabPages.Add(tabNet);
             tabs.TabPages.Add(tabClean);
             tabs.TabPages.Add(tabRemote);
             tabs.TabPages.Add(tabTools);
+            tabs.TabPages.Add(tabUncover);
+            tabs.TabPages.Add(tabBackup);
+            tabs.TabPages.Add(tabForensic);
 
             BuildDiagTab(tabDiag);
             BuildUsbTab(tabUsb);
             BuildOneClickTab(tabOneClick);
-            BuildNetTab(tabNet);
             BuildCleanTab(tabClean);
             BuildRemoteTab(tabRemote);
             BuildToolsTab(tabTools);
+            BuildUncoverTab(tabUncover);
+            BuildBackupTab(tabBackup);
+            BuildForensicTab(tabForensic);
 
             return tabs;
         }
@@ -405,7 +429,7 @@ namespace NetSecTool
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 4,
-                RowCount = 4,
+                RowCount = 5,
                 BackColor = ClrPanel,
                 Padding = new Padding(12, 8, 12, 4),
                 Margin = Padding.Empty
@@ -417,7 +441,8 @@ namespace NetSecTool
             tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));   // 0 - card mang
             tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));   // 1 - tim don vi
             tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));   // 2 - thong tin don vi
-            tbl.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // 3 - ghi chu
+            tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));   // 3 - IP/GW thu cong
+            tbl.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // 4 - ghi chu
 
             // --- Chon card mang ---
             var pnlAdapter = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
@@ -484,10 +509,30 @@ namespace NetSecTool
             tbl.Controls.Add(lblDiagUnitInfo, 0, 2);
             tbl.SetColumnSpan(lblDiagUnitInfo, 4);
 
-            // --- Hang 3: ghi chu ---
+            // --- Hang 3: IP / Gateway thu cong (khong bat buoc - de trong neu tu dong nhan dien) ---
+            //
+            // Ver5.7: truoc day hai o nay nam o tab "CAU HINH MANG" da bi xoa.
+            // Chuyen sang day de nguoi van hanh co the nhap tay khamoang chan doan
+            // tu cho, trong khi nhan dien tu dong van la mac dinh.
+            tbl.Controls.Add(MakeLabel("IP tĩnh:", 0, 7), 0, 3);
+
+            txtDiagIp = MakeTextBox("", 0, 0, 120);
+            txtDiagIp.Dock = DockStyle.Fill;
+            txtDiagIp.Margin = new Padding(0, 3, 8, 3);
+            tbl.Controls.Add(txtDiagIp, 1, 3);
+
+            tbl.Controls.Add(MakeLabel("Gateway:", 0, 7), 2, 3);
+
+            txtDiagGateway = MakeTextBox("", 0, 0, 120);
+            txtDiagGateway.Dock = DockStyle.Fill;
+            txtDiagGateway.Margin = new Padding(0, 3, 0, 3);
+            tbl.Controls.Add(txtDiagGateway, 3, 3);
+
+            // --- Hang 4: ghi chu ---
             var lblHint = new Label
             {
-                Text = "Chế độ nhanh: 4 bước cơ bản (link, driver, gateway, DNS).   Đầy đủ: thêm tracert & quét modem WAN.",
+                Text = "Chế độ nhanh: 4 bước cơ bản (link, driver, gateway, DNS).   Đầy đủ: thêm tracert & quét modem WAN.\n" +
+                       "Để trống IP/Gateway nếu muốn phần mềm tự nhận diện từ cấu hình mạng hiện tại.",
                 ForeColor = Color.FromArgb(90, 98, 91),
                 Font = new Font("Segoe UI", 8.5f),
                 Dock = DockStyle.Fill,
@@ -495,7 +540,7 @@ namespace NetSecTool
                 AutoSize = false,
                 Margin = Padding.Empty
             };
-            tbl.Controls.Add(lblHint, 0, 3);
+            tbl.Controls.Add(lblHint, 0, 4);
             tbl.SetColumnSpan(lblHint, 4);
 
             return tbl;
@@ -627,8 +672,8 @@ namespace NetSecTool
                 var opt = new NetDiagnostics.Options
                 {
                     AdapterName = GetSelectedDiagAdapterName(),
-                    IpAddress = txtIP?.Text.Trim() ?? "",
-                    Gateway = txtGateway?.Text.Trim() ?? "",
+                    IpAddress = txtDiagIp?.Text.Trim() ?? "",
+                    Gateway = txtDiagGateway?.Text.Trim() ?? "",
                     PingCount = 4,
                     TimeoutSeconds = 8,
                     RunTracert = full,
@@ -1463,92 +1508,6 @@ namespace NetSecTool
         }
 
         // ==================================================================
-        // TAB 3: CAU HINH MANG
-        // ==================================================================
-
-        private void BuildNetTab(TabPage tab)
-        {
-            var layout = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                ColumnCount = 1,
-                RowCount = 2,
-                Margin = Padding.Empty,
-                Padding = Padding.Empty
-            };
-            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 270));  // 0 - dieu khien
-            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // 1 - huong dan
-            tab.Controls.Add(layout);
-
-            // --- Bang dieu khien ---
-            var tbl = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                ColumnCount = 2,
-                RowCount = 7,
-                BackColor = ClrPanel,
-                Padding = new Padding(12, 8, 12, 8),
-                Margin = Padding.Empty
-            };
-            tbl.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150));
-            tbl.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 26));  // 0 - tieu de
-            for (int i = 1; i <= 5; i++) tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
-            tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));  // 6 - nut bam
-
-            var lblTitle = new Label
-            {
-                Text = "CẤU HÌNH IP TĨNH & DNS",
-                ForeColor = ClrMidGreen,
-                Font = new Font("Segoe UI", 10.5f, FontStyle.Bold),
-                Dock = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleLeft,
-                AutoSize = false,
-                Margin = Padding.Empty
-            };
-            tbl.Controls.Add(lblTitle, 0, 0);
-            tbl.SetColumnSpan(lblTitle, 2);
-
-            string[] labels = { "Tên Card mạng:", "IP Address:", "Subnet Mask:", "Default Gateway:", "DNS Server:" };
-            string[] defaults = { "Ethernet", "192.168.1.100", "255.255.255.0", "192.168.1.1", "8.8.8.8" };
-            TextBox[] boxes = new TextBox[5];
-
-            for (int i = 0; i < 5; i++)
-            {
-                tbl.Controls.Add(MakeLabel(labels[i], 0, 0), 0, i + 1);
-                boxes[i] = MakeTextBox(defaults[i], 0, 0, 260);
-                boxes[i].Dock = DockStyle.Fill;
-                boxes[i].Margin = new Padding(0, 3, 0, 3);
-                tbl.Controls.Add(boxes[i], 1, i + 1);
-            }
-            txtAdapter = boxes[0]; txtIP = boxes[1]; txtSubnet = boxes[2];
-            txtGateway = boxes[3]; txtDNS = boxes[4];
-
-            btnChangeIP = MakeButton("Thiết lập IP & DNS", 0, 0, 260, 32, ClrMidGreen);
-            btnChangeIP.Click += BtnChangeIP_Click;
-            btnChangeIP.Dock = DockStyle.Fill;
-            btnChangeIP.Margin = new Padding(0, 4, 0, 0);
-            // Row 6 - hang rieng cho nut (truoc day dat o row 5 se de len o DNS Server)
-            tbl.Controls.Add(btnChangeIP, 0, 6);
-            tbl.SetColumnSpan(btnChangeIP, 2);
-
-            layout.Controls.Add(tbl, 0, 0);
-
-            // --- Huong dan ---
-            var info = new Label
-            {
-                Text = "Sau khi thiết lập, quay lại tab \"KIỂM TRA KẾT NỐI\" để kiểm tra gateway, DNS và đường truyền.\n\n" +
-                       "Địa chỉ DNS quân sự cố định: 86.0.188.1",
-                ForeColor = ClrMuted,
-                Font = new Font("Segoe UI", 9f),
-                Dock = DockStyle.Fill,
-                Padding = new Padding(12, 10, 12, 10),
-                AutoSize = false,
-                Margin = Padding.Empty
-            };
-            layout.Controls.Add(info, 0, 1);
-        }
 
         // ==================================================================
         // ==================================================================
@@ -2380,6 +2339,11 @@ namespace NetSecTool
 
         private void BuildToolsTab(TabPage tab)
         {
+            // Ver5.7: tab nay da bo sung "Chay Kaspersky (KVRT)" va
+            // "Xoa nhat ky Event Viewer". Hai chuc nang do:
+            //   - Xoa Event Viewer -> chuyen sang tab "LAM SACH PC MOT CHAM" (Buoc 4)
+            //   - KVRT             -> giu nut o day + them tu dong cap nhat ban moi
+            // Tien ich "Hien File/Folder an" da tach thanh tab rieng.
             var layout = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
@@ -2389,7 +2353,7 @@ namespace NetSecTool
                 Padding = Padding.Empty
             };
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 186));  // 0 - dieu khien
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 210));  // 0 - dieu khien
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // 1 - huong dan
             tab.Controls.Add(layout);
 
@@ -2397,7 +2361,7 @@ namespace NetSecTool
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 3,
-                RowCount = 4,
+                RowCount = 5,
                 BackColor = ClrPanel,
                 Padding = new Padding(12, 8, 12, 8),
                 Margin = Padding.Empty
@@ -2407,8 +2371,9 @@ namespace NetSecTool
             tbl.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 210));
             tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 26));  // 0 - tieu de
             tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));  // 1 - KVRT
-            tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));  // 2 - event viewer
-            tbl.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 3 - o dia
+            tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));  // 2 - trang thai KVRT
+            tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));  // 3 - tu chon auto-update
+            tbl.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 4 - ghi chu
 
             var lblTitle = new Label
             {
@@ -2423,6 +2388,7 @@ namespace NetSecTool
             tbl.Controls.Add(lblTitle, 0, 0);
             tbl.SetColumnSpan(lblTitle, 3);
 
+            // --- Hang 1: chay KVRT ---
             btnRunKVRT = MakeButton("Chạy Kaspersky (KVRT)", 0, 0, 300, 34, ClrRed);
             btnRunKVRT.Click += BtnRunKVRT_Click;
             btnRunKVRT.Dock = DockStyle.Fill;
@@ -2430,55 +2396,66 @@ namespace NetSecTool
             tbl.Controls.Add(btnRunKVRT, 0, 1);
             tbl.SetColumnSpan(btnRunKVRT, 3);
 
-            btnClearLogs = MakeButton("Xóa nhật ký Event Viewer", 0, 0, 300, 34, ClrDarkGold);
-            btnClearLogs.Click += BtnClearLogs_Click;
-            btnClearLogs.Dock = DockStyle.Fill;
-            btnClearLogs.Margin = new Padding(0, 3, 0, 3);
-            tbl.Controls.Add(btnClearLogs, 0, 2);
-            tbl.SetColumnSpan(btnClearLogs, 3);
-
-            tbl.Controls.Add(MakeLabel("Ổ đĩa:", 0, 0), 0, 3);
-
-            cmbDrives = new ComboBox
+            // --- Hang 2: trang thai ban KVRT ---
+            lblKvrtStatus = new Label
             {
+                Text = "KVRT: chưa kiểm tra",
+                ForeColor = ClrMuted,
+                Font = new Font("Segoe UI", 9f),
                 Dock = DockStyle.Fill,
-                DropDownStyle = ComboBoxStyle.DropDownList,
-                Margin = new Padding(0, 3, 8, 3)
+                TextAlign = ContentAlignment.MiddleLeft,
+                AutoSize = false,
+                Margin = Padding.Empty
             };
-            tbl.Controls.Add(cmbDrives, 1, 3);
+            tbl.Controls.Add(lblKvrtStatus, 0, 2);
+            tbl.SetColumnSpan(lblKvrtStatus, 3);
 
-            var pnlDrvBtns = new TableLayoutPanel
+            // --- Hang 3: tu chon + nut kiem tra cap nhat ---
+            chkKvrtAutoUpdate = MakeCheck("Tự động cập nhật KVRT khi có Internet", true);
+            tbl.Controls.Add(chkKvrtAutoUpdate, 0, 3);
+
+            var pnlKvrtBtns = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
-                ColumnCount = 2,
+                ColumnCount = 1,
                 RowCount = 1,
                 Margin = Padding.Empty
             };
-            pnlDrvBtns.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-            pnlDrvBtns.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-            pnlDrvBtns.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            pnlKvrtBtns.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            pnlKvrtBtns.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-            btnRefreshDrives = MakeButton("Làm mới", 0, 0, 88, 25, ClrDarkGold);
-            btnRefreshDrives.Click += (s, e) => LoadDrives();
-            btnRefreshDrives.Dock = DockStyle.Fill;
-            btnRefreshDrives.Margin = new Padding(0, 3, 4, 3);
-            pnlDrvBtns.Controls.Add(btnRefreshDrives, 0, 0);
+            btnKvrtUpdate = MakeButton("Kiểm tra cập nhật KVRT ngay", 0, 0, 210, 25, ClrDarkGold);
+            btnKvrtUpdate.Click += BtnKvrtUpdate_Click;
+            btnKvrtUpdate.Dock = DockStyle.Fill;
+            btnKvrtUpdate.Margin = new Padding(0, 3, 0, 3);
+            pnlKvrtBtns.Controls.Add(btnKvrtUpdate, 0, 0);
 
-            btnUncoverFiles = MakeButton("Hiện File/Folder ẩn", 0, 0, 194, 25, ClrMidGreen);
-            btnUncoverFiles.Click += BtnUncoverFiles_Click;
-            btnUncoverFiles.Dock = DockStyle.Fill;
-            btnUncoverFiles.Margin = new Padding(4, 3, 0, 3);
-            pnlDrvBtns.Controls.Add(btnUncoverFiles, 1, 0);
+            tbl.Controls.Add(pnlKvrtBtns, 2, 3);
+            tbl.SetColumnSpan(pnlKvrtBtns, 1);
 
-            tbl.Controls.Add(pnlDrvBtns, 2, 3);
+            // --- Hang 4: ghi chu ---
+            var lblNote = new Label
+            {
+                Text = "Kaspersky Virus Removal Tool (KVRT) — công cụ quét virus ngoại tuyến.\n" +
+                       "Tự động cập nhật: kiểm tra chữ ký số + CSDL mới, chép đè an toàn (atomic replace, có rollback).",
+                ForeColor = ClrMuted,
+                Font = new Font("Segoe UI", 8.5f),
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.TopLeft,
+                AutoSize = false,
+                Margin = Padding.Empty
+            };
+            tbl.Controls.Add(lblNote, 0, 4);
+            tbl.SetColumnSpan(lblNote, 3);
 
             layout.Controls.Add(tbl, 0, 0);
 
             var info = new Label
             {
-                Text = "Kaspersky (KVRT): công cụ quét virus ngoại tuyến.\n" +
-                       "Xóa nhật ký Event Viewer: dọn dẹp lịch sử hệ thống.\n" +
-                       "Hiện File/Folder ẩn: khôi phục file bị đánh dấu ẩn trên ổ đĩa.",
+                Text = "Gợi ý vận hành:\n\n" +
+                       "• Trước khi vào mạng quân sự: chạy tab \"LÀM SẠCH PC MỘT CHẠM\" (gồm xóa nhật ký Event Log ở Bước 4).\n" +
+                       "• KVRT dùng để quét ngoại tuyến sau khi làm sạch. Bản cập nhật giúp nhận diện mã độc mới nhất.\n" +
+                       "• Nếu máy đang offline, phần cập nhật sẽ bỏ qua âm thầm — không hiện hộp thoại lỗi.",
                 ForeColor = ClrMuted,
                 Font = new Font("Segoe UI", 9f),
                 Dock = DockStyle.Fill,
@@ -2588,30 +2565,28 @@ namespace NetSecTool
         /// <summary>Panel lựa chọn các nhóm hạng mục làm sạch.</summary>
         private Control BuildCleanOptionsPanel()
         {
-            // 7 hang: 0 tieu de / 1-4 hang checkbox / 5 canh bao / 6 phan dem
+            // Ver5.7: quy trinh 4 buoc tuan tu (theo "Bo sung chuc nang don dep.md")
             var tbl = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
-                ColumnCount = 3,
-                RowCount = 7,
+                ColumnCount = 2,
+                RowCount = 6,
                 BackColor = ClrPanel,
                 Padding = new Padding(12, 6, 12, 6),
                 Margin = Padding.Empty
             };
+            tbl.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 66));
             tbl.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34));
-            tbl.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33));
-            tbl.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33));
             tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));   // 0 - tieu de
-            tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 26));   // 1
-            tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 26));   // 2
-            tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 26));   // 3
-            tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 26));   // 4 - KVRT
-            tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));   // 5 - canh bao
-            tbl.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // 6 - phan dem
+            tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));   // 1 - buoc 1
+            tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));   // 2 - buoc 2
+            tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));   // 3 - buoc 3
+            tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));   // 4 - buoc 4
+            tbl.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // 5 - canh bao + admin
 
             var lblTitle = new Label
             {
-                Text = "CHỌN HẠNG MỤC CẦN LÀM SẠCH   (mặc định: chọn toàn bộ)",
+                Text = "QUY TRINH 4 BUOC TUAN TU   (mac dinh: chon toan bo)",
                 ForeColor = ClrMidGreen,
                 Font = new Font("Segoe UI", 10.5f, FontStyle.Bold),
                 Dock = DockStyle.Fill,
@@ -2620,54 +2595,80 @@ namespace NetSecTool
                 Margin = Padding.Empty
             };
             tbl.Controls.Add(lblTitle, 0, 0);
-            tbl.SetColumnSpan(lblTitle, 3);
+            tbl.SetColumnSpan(lblTitle, 2);
 
-            chkCleanMiAV = MakeCheck("Xóa log MiAV (mục 6 nhóm A+B)", true);
-            chkCleanBrowser = MakeCheck("Xóa lịch sử trình duyệt", true);
-            chkCleanSrum = MakeCheck("Xóa SRUM (SRUDB.dat)", true);
-            chkCleanDns = MakeCheck("Xóa DNS cache + ARP", true);
-            chkCleanPrefetch = MakeCheck("Xóa Prefetch", true);
-            chkCleanAmcache = MakeCheck("Xóa Amcache", true);
-            chkCleanRunMru = MakeCheck("Xóa RunMRU/TypedPaths", true);
-            chkCleanJumpList = MakeCheck("Xóa Jump List", true);
-            chkCleanEventLog = MakeCheck("Xóa Windows Event Log", true);
-            chkCleanKvrt = MakeCheck("Quét & khử nhiễm KVRT", true);
-            chkInstallMiAV = MakeCheck("Cài lại phần mềm MiAV (BTL86)", true);
-            chkCleanReboot = MakeCheck("Khởi động lại sau khi quét", true);
+            // --- Buoc 1 ---
+            chkCleanV57Step1 = MakeCheck("BUOC 1: Don file tam (%TEMP%, Windows\\Temp, Prefetch, Windows Update cache)", true);
+            tbl.Controls.Add(chkCleanV57Step1, 0, 1);
+            tbl.SetColumnSpan(chkCleanV57Step1, 2);
 
-            // Hang 1 - nhom A (MiAV) + lich su trinh duyet
-            tbl.Controls.Add(chkCleanMiAV, 0, 1);
-            tbl.Controls.Add(chkCleanBrowser, 1, 1);
-            tbl.Controls.Add(chkCleanSrum, 2, 1);
+            // --- Buoc 2 ---
+            chkCleanV57Step2 = MakeCheck("BUOC 2: Don lich su trinh duyet (Chrome, Edge, Coc Coc, Firefox)", true);
+            tbl.Controls.Add(chkCleanV57Step2, 0, 2);
+            tbl.SetColumnSpan(chkCleanV57Step2, 2);
 
-            // Hang 2 - nhom B + nhom C
-            tbl.Controls.Add(chkCleanDns, 0, 2);
-            tbl.Controls.Add(chkCleanPrefetch, 1, 2);
-            tbl.Controls.Add(chkCleanAmcache, 2, 2);
+            // --- Buoc 3 ---
+            chkCleanV57Step3 = MakeCheck("BUOC 3: Xoa sau lich su USB (USBSTOR, MountedDevices, DeviceClasses, setupapi)", true);
+            tbl.Controls.Add(chkCleanV57Step3, 0, 3);
+            tbl.SetColumnSpan(chkCleanV57Step3, 2);
 
-            // Hang 3
-            tbl.Controls.Add(chkCleanRunMru, 0, 3);
-            tbl.Controls.Add(chkCleanJumpList, 1, 3);
-            tbl.Controls.Add(chkCleanEventLog, 2, 3);
+            // --- Buoc 4 ---
+            chkCleanV57Step4 = MakeCheck("BUOC 4: Xoa toan bo Windows Event Log (wevtutil el -> cl)", true);
+            tbl.Controls.Add(chkCleanV57Step4, 0, 4);
 
-            // Hang 4 - KVRT + reboot
-            tbl.Controls.Add(chkCleanKvrt, 0, 4);
-            tbl.Controls.Add(chkInstallMiAV, 1, 4);
-            tbl.Controls.Add(chkCleanReboot, 2, 4);
+            chkCleanKvrt = MakeCheck("Chay Kaspersky KVRT sau khi lam sach", true);
+            tbl.Controls.Add(chkCleanKvrt, 1, 4);
 
-            // Hang 5 - canh bao
-            var lblWarn = new Label
+            // --- Hang canh bao + trang thai quyen ---
+            var pnlFoot = new TableLayoutPanel
             {
-                Text = "⚠ Nên NGẮT INTERNET trước khi chạy. Xóa log cục bộ không thu hồi được dữ liệu đã gửi lên server FMS.",
-                ForeColor = ClrRed,
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 2,
+                Margin = Padding.Empty
+            };
+            pnlFoot.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            pnlFoot.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+            pnlFoot.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+            lblCleanAdmin = new Label
+            {
+                Text = "Quyen: dang kiem tra...",
+                ForeColor = ClrMuted,
                 Font = new Font("Segoe UI", 9f, FontStyle.Bold),
                 Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleLeft,
                 AutoSize = false,
                 Margin = Padding.Empty
             };
-            tbl.Controls.Add(lblWarn, 0, 5);
-            tbl.SetColumnSpan(lblWarn, 3);
+            pnlFoot.Controls.Add(lblCleanAdmin, 0, 0);
+
+            var lblWarn = new Label
+            {
+                Text = "\u26A0 Nen NGAT INTERNET truoc khi chay. Xoa log cuc bo khong thu hoi duoc du lieu da gui len server FMS.\n" +
+                       "   Buoc 3 yeu cau quyen Administrator (doi quyen so huu registry). Buoc 4 xoa toan bo nhat ky su kien he thong.",
+                ForeColor = ClrRed,
+                Font = new Font("Segoe UI", 8.5f, FontStyle.Bold),
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.TopLeft,
+                AutoSize = false,
+                Margin = Padding.Empty
+            };
+            pnlFoot.Controls.Add(lblWarn, 0, 1);
+
+            tbl.Controls.Add(pnlFoot, 0, 5);
+            tbl.SetColumnSpan(pnlFoot, 2);
+
+            try
+            {
+                bool admin = PcCleanerV57.IsAdministrator();
+                lblCleanAdmin.Text = admin
+                    ? "\u2713 Dang chay voi quyen Administrator \u2014 du de thuc hien du 4 buoc."
+                    : "\u2717 KHONG co quyen Administrator \u2014 Buoc 3 (lich su USB) va Buoc 4 (Event Log) se bi bo qua.\n" +
+                      "   \u2192 Nhap chuot phai vao Danny.exe \u2192 \"Chay voi tu cach quan tri vien\" roi mo lai.";
+                lblCleanAdmin.ForeColor = admin ? ClrMidGreen : ClrRed;
+            }
+            catch { }
 
             return tbl;
         }
@@ -2719,60 +2720,71 @@ namespace NetSecTool
         {
             if (cleanRunning) return;
 
-            var opt = new CleanOptions
+            var opt = new CleanV57Options
             {
-                CleanBrowserHistory = chkCleanBrowser.Checked,
-                CleanSrum = chkCleanSrum.Checked,
-                CleanDnsCache = chkCleanDns.Checked,
-                CleanPrefetch = chkCleanPrefetch.Checked,
-                CleanAmcache = chkCleanAmcache.Checked,
-                CleanRunMru = chkCleanRunMru.Checked,
-                CleanJumpList = chkCleanJumpList.Checked,
-                CleanEventLog = chkCleanEventLog.Checked,
-                CleanMiAV = chkCleanMiAV.Checked,
-                RunKvrt = chkCleanKvrt.Checked,
-                InstallMiAV = chkInstallMiAV.Checked,
-                RebootAfterKvrt = chkCleanReboot.Checked
+                Step1Temp = chkCleanV57Step1.Checked,
+                Step2Browsers = chkCleanV57Step2.Checked,
+                Step3UsbHistory = chkCleanV57Step3.Checked,
+                Step4EventLog = chkCleanV57Step4.Checked,
+                RunKvrtAfter = chkCleanKvrt.Checked
             };
 
-            if (!opt.CleanMiAV && !opt.CleanBrowserHistory && !opt.CleanSrum &&
-                !opt.CleanDnsCache && !opt.CleanPrefetch && !opt.CleanAmcache &&
-                !opt.CleanRunMru && !opt.CleanJumpList && !opt.CleanEventLog && !opt.RunKvrt
-                && !opt.InstallMiAV)
+            if (!opt.Step1Temp && !opt.Step2Browsers && !opt.Step3UsbHistory && !opt.Step4EventLog)
             {
-                MessageBox.Show("Chưa chọn hạng mục nào để làm sạch.", "Làm sạch PC",
+                MessageBox.Show("Chua chon buoc nao de lam sach.", "Lam sach PC",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
+            // --- Kiem tra quyen Administrator ---
+            bool admin = PcCleanerV57.IsAdministrator();
+            if (!admin)
+            {
+                var adm = MessageBox.Show(
+                    "PHAN MEM DANG CHAY KHONG CO QUYEN ADMINISTRATOR.\n\n" +
+                    "Buoc 3 (xoa sau lich su USB) va Buoc 4 (xoa Windows Event Log)\n" +
+                    "BAT BUOC co quyen Administrator moi thuc hien duoc.\n\n" +
+                    "Ban co the:\n" +
+                    "  • Tiep tuc chay (chi thuc hien Buoc 1 + Buoc 2)\n" +
+                    "  • Thoat ra, nhap chuot phai vao Danny.exe ->\n" +
+                    "    \"Chay voi tu cach quan tri vien\" roi mo lai.",
+                    "Can quyen Administrator",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button2);
+                if (adm != DialogResult.Yes) return;
+            }
+
+            var steps = new List<string>();
+            if (opt.Step1Temp) steps.Add("Buoc 1 - Don file tam");
+            if (opt.Step2Browsers) steps.Add("Buoc 2 - Don lich su trinh duyet");
+            if (opt.Step3UsbHistory) steps.Add("Buoc 3 - Xoa sau lich su USB");
+            if (opt.Step4EventLog) steps.Add("Buoc 4 - Xoa Windows Event Log");
+            if (opt.RunKvrtAfter) steps.Add("Buoc bo sung - Quet KVRT");
+
             string warn =
-                "Sẽ XÓA lịch sử trình duyệt, log MiAV, SRUM, Prefetch, Amcache,\n" +
-                "RunMRU, Jump List và toàn bộ Windows Event Log.\n\n" +
-                "Sau đó chạy Kaspersky KVRT quét toàn bộ ổ đĩa (có thể mất 30–120 phút)\n";
-            if (opt.InstallMiAV)
-                warn += "→ Cài đặt LẠI phần mềm MiAV (BTL86) — 4 service sẽ được tạo mới.\n";
-            if (opt.RebootAfterKvrt)
-                warn += "→ KHỞI ĐỘNG LẠI máy khi quét xong.\n";
-            warn +=
-                "\nBản sao lưu sẽ được tạo tại C:\\_Danny_Cleanup\\.\n\n" +
-                "Tiếp tục?";
-            if (MessageBox.Show(warn, "Xác nhận làm sạch PC một chạm",
-                    MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
+                "SE XOA (khong the khoi phuc):\n" +
+                string.Join("\n", steps.Select((s, i) => "  " + (i + 1) + ". " + s)) + "\n\n" +
+                "Luoi bao ve: phan vung he thong \\DosDevices\\C: duoc giu nguyen.\n" +
+                "Bao cao ket qua se duoc luu tai C:\\_Danny_Cleanup\\.\n\n" +
+                "Tien tuc?";
+            if (MessageBox.Show(warn, "Xac nhan lam sach PC mot cham",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button2) != DialogResult.Yes)
                 return;
 
             cleanRunning = true;
             btnCleanNow.Enabled = false;
             btnCleanStop.Enabled = true;
-            btnCleanNow.Text = "ĐANG CHẠY...";
+            btnCleanNow.Text = "DANG CHAY...";
             txtCleanLog.Clear();
-            lblCleanSummary.Text = "Đang thực hiện...";
+            lblCleanSummary.Text = "Dang thuc hien...";
             lblCleanSummary.ForeColor = ClrMidGreen;
             barClean.Value = 0;
 
             ctsClean = new CancellationTokenSource();
             var token = ctsClean.Token;
 
-            CleanResult result = await Task.Run(() => PcCleaner.Run(opt,
+            CleanV57Result result = await Task.Run(() => PcCleanerV57.Run(opt,
                 (msg, kind) => BeginInvokeSafe(() => CleanLog(msg, kind)),
                 (c, t) => BeginInvokeSafe(() =>
                 {
@@ -2784,46 +2796,24 @@ namespace NetSecTool
             cleanRunning = false;
             btnCleanNow.Enabled = true;
             btnCleanStop.Enabled = false;
-            btnCleanNow.Text = "BẮT ĐẦU LÀM SẠCH";
+            btnCleanNow.Text = "BAT DAU LAM SACH";
 
-            string summary = $"Xong: {result.Succeeded} thành công · {result.Failed} lỗi · {result.Skipped} bỏ qua";
-            lblCleanSummary.Text = summary;
-            lblCleanSummary.ForeColor = result.Failed == 0 ? ClrMidGreen : ClrRed;
+            lblCleanSummary.Text = (result.Cancelled ? "DA HUY - " : "Xong - ") + result.Summary;
+            lblCleanSummary.ForeColor = result.TotalFail > 0 || result.TotalError > 0
+                ? ClrRed : ClrMidGreen;
             barClean.Maximum = 100;
             barClean.Value = 100;
 
-            CleanLog("=== HOÀN TẤT ===", CleanLogKind.Heading);
-            CleanLog(summary, CleanLogKind.Heading);
-            CleanLog($"Bản sao lưu / báo cáo: {opt.BackupRoot}", CleanLogKind.Info);
-            if (result.MiAVInstalled)
-                CleanLog("✓ Đã cài lại phần mềm MiAV — 4 service (MiAVWD / MiAVUpdate / MiAVProtect / Defense) đang hoạt động.",
-                    CleanLogKind.Success);
-            else if (opt.InstallMiAV)
-                CleanLog("⚠ Chưa cài lại được MiAV. Máy sẽ không có giám sát EDR — cần cài thủ công SetupMiAV.exe.",
-                    CleanLogKind.Warn);
-            if (result.MiAVInternetUnsent > 0)
-                CleanLog($"⚠ Còn {result.MiAVInternetUnsent} dòng 'Internet' CHƯA gửi — "
-                       + "hãy kiểm tra lại sau khi bật lại service.", CleanLogKind.Warn);
-            if (result.MiAVInternetRows > result.MiAVInternetUnsent)
-                CleanLog("⚠ Có dòng 'Internet' đã gửi lên server FMS → cần đề nghị quản trị viên FMS xóa.",
-                    CleanLogKind.Warn);
-
-            if (opt.RunKvrt && opt.RebootAfterKvrt)
-            {
-                string extra = opt.InstallMiAV
-                    ? "Phần mềm MiAV đã được cài lại.\n\n"
-                    : "";
-                DialogResult rb = MessageBox.Show(
-                    extra + "Đã hoàn tất quét KVRT.\n\nKhởi động lại máy ngay (đếm ngược 60 giây)?\n" +
-                    "Nếu không, hãy khởi động lại thủ công sau khi đóng phần mềm.",
-                    "Khởi động lại máy",
-                    MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-                if (rb == DialogResult.Yes)
-                {
-                    PcCleaner.ScheduleReboot(60);
-                    CleanLog("Đã lên lịch khởi động lại máy sau 60 giây.", CleanLogKind.Success);
-                }
-            }
+            MessageBox.Show(
+                (result.Cancelled ? "DA HUY qua trinh.\n\n" : "") +
+                result.Summary + "\n\n" +
+                (result.TotalFail > 0 || result.TotalError > 0
+                    ? "Co mot so hang muc khong dat - xem log chi tiet ben tren."
+                    : "Tat ca hang muc deu dat."),
+                result.Cancelled ? "Da huy" : "Lam sach hoan tat",
+                MessageBoxButtons.OK,
+                result.TotalFail > 0 || result.TotalError > 0
+                    ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
         }
 
         private void BtnCleanStop_Click(object? sender, EventArgs e)
@@ -3217,81 +3207,6 @@ namespace NetSecTool
         // CAC HAM XU LY LOGIC CON LAI
         // ==================================================================
 
-        private async void BtnClearLogs_Click(object? sender, EventArgs e)
-        {
-            var result = MessageBox.Show("Đồng chí có chắc chắn muốn xóa toàn bộ lịch sử hệ thống (Event Viewer) không?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-            if (result == DialogResult.Yes)
-            {
-                btnClearLogs.Enabled = false;
-                btnClearLogs.Text = "Đang dọn dẹp...";
-
-                await Task.Run(() =>
-                {
-                    try
-                    {
-                        EventLog[] eventLogs = EventLog.GetEventLogs();
-                        foreach (EventLog log in eventLogs)
-                        {
-                            log.Clear();
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        ExecuteCommand("cmd.exe", "/c for /F \"tokens=*\" %1 in ('wevtutil.exe el') DO wevtutil.exe cl \"%1\"");
-                    }
-                });
-
-                btnClearLogs.Enabled = true;
-                btnClearLogs.Text = "Xóa nhật ký Event Viewer";
-                Log("Đã xóa toàn bộ nhật ký hệ thống (Event Viewer).", LogKind.Success);
-            }
-        }
-
-        private void LoadDrives()
-        {
-            if (cmbDrives == null) return;
-            cmbDrives.Items.Clear();
-            foreach (DriveInfo drive in DriveInfo.GetDrives())
-            {
-                if (drive.IsReady)
-                    cmbDrives.Items.Add(drive.Name + " (" +
-                        (drive.DriveType == DriveType.Removable ? "USB" : "Ổ cứng") + ")");
-            }
-            if (cmbDrives.Items.Count > 0) cmbDrives.SelectedIndex = 0;
-        }
-
-        private async void BtnUncoverFiles_Click(object? sender, EventArgs e)
-        {
-            if (cmbDrives?.SelectedItem == null) return;
-            string driveLetter = cmbDrives.SelectedItem.ToString().Substring(0, 3);
-            btnUncoverFiles.Enabled = false;
-            btnUncoverFiles.Text = "Đang xử lý...";
-
-            await Task.Run(() =>
-            {
-                ExecuteCommand("cmd.exe", "/c attrib -s -h -r \"" + driveLetter + "*.*\" /s /d");
-            });
-
-            btnUncoverFiles.Enabled = true;
-            btnUncoverFiles.Text = "Hiện File/Folder ẩn";
-            Log("Đã khôi phục file ẩn trên ổ " + driveLetter + ".", LogKind.Success);
-        }
-
-        private void BtnChangeIP_Click(object? sender, EventArgs e)
-        {
-            try
-            {
-                ExecuteCommand("netsh", "interface ip set address \"" + txtAdapter.Text + "\" static "
-                    + txtIP.Text + " " + txtSubnet.Text + " " + txtGateway.Text);
-                if (!string.IsNullOrWhiteSpace(txtDNS.Text))
-                    ExecuteCommand("netsh", "interface ip set dns \"" + txtAdapter.Text + "\" static " + txtDNS.Text);
-                Log("Đã cấu hình IP/DNS cho card \"" + txtAdapter.Text + "\": "
-                    + txtIP.Text + "/" + txtSubnet.Text + ", GW " + txtGateway.Text
-                    + ", DNS " + txtDNS.Text, LogKind.Success);
-            }
-            catch (Exception ex) { Log("Lỗi cấu hình IP: " + ex.Message, LogKind.Error); }
-        }
-
         private void BtnRunKVRT_Click(object? sender, EventArgs e)
         {
             try
@@ -3320,6 +3235,120 @@ namespace NetSecTool
                 Log("Đã khởi chạy Kaspersky (KVRT).", LogKind.Success);
             }
             catch (Exception ex) { Log("Lỗi chạy KVRT: " + ex.Message, LogKind.Error); }
+        }
+
+        // ==================================================================
+        // CAP NHAT KVRT (Ver5.7)
+        // ==================================================================
+
+        /// <summary>Nút "Kiểm tra cập nhật KVRT ngay" — cập nhật thủ công theo yêu cầu.</summary>
+        private async void BtnKvrtUpdate_Click(object? sender, EventArgs e)
+        {
+            if (btnKvrtUpdate == null) return;
+
+            btnKvrtUpdate.Enabled = false;
+            btnKvrtUpdate.Text = "ĐANG CẬP NHẬT...";
+            if (lblKvrtStatus != null)
+            {
+                lblKvrtStatus.Text = "Đang kiểm tra cập nhật KVRT...";
+                lblKvrtStatus.ForeColor = ClrDarkGold;
+            }
+
+            var res = await KvrtUpdater.UpdateAsync(
+                msg => BeginInvokeSafe(() => Log(msg, LogKind.Info)),
+                new Progress<int>(_ => { }),
+                CancellationToken.None);
+
+            foreach (string s in res.Steps)
+                Log(s, res.Updated ? LogKind.Success : LogKind.Info);
+
+            if (btnKvrtUpdate != null)
+            {
+                btnKvrtUpdate.Enabled = true;
+                btnKvrtUpdate.Text = "Kiểm tra cập nhật KVRT ngay";
+            }
+
+            if (lblKvrtStatus != null)
+            {
+                if (res.Updated)
+                {
+                    lblKvrtStatus.Text = "Đã cập nhật KVRT lúc " + DateTime.Now.ToString("HH:mm:ss");
+                    lblKvrtStatus.ForeColor = ClrMidGreen;
+                }
+                else if (res.Offline)
+                {
+                    lblKvrtStatus.Text = "Offline — bỏ qua cập nhật";
+                    lblKvrtStatus.ForeColor = ClrMuted;
+                }
+                else
+                {
+                    lblKvrtStatus.Text = "Không cập nhật được: " + Truncate(res.Message, 60);
+                    lblKvrtStatus.ForeColor = ClrDarkGold;
+                }
+            }
+
+            if (res.Updated)
+                MessageBox.Show(res.Message, "Cập nhật KVRT",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            else if (!res.Offline)
+                MessageBox.Show(res.Message, "Cập nhật KVRT",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        /// <summary>
+        /// Tự động cập nhật KVRT khi khởi động phần mềm (luồng nền).
+        ///
+        /// <para>Fail-soft: nếu offline thì bỏ qua âm thầm, chỉ cập nhật nhãn trạng thái.
+        /// Không bao giờ hiện hộp thoại lỗi từ luồng nền.</para>
+        /// </summary>
+        private async void AutoUpdateKvrtOnStartup()
+        {
+            try
+            {
+                if (chkKvrtAutoUpdate != null && !chkKvrtAutoUpdate.Checked) return;
+                if (KvrtUpdater.LocateKvrt() == null) return;
+
+                // Cho UI settle truoc khi bat dau viec mang
+                await Task.Delay(2500);
+
+                var res = await KvrtUpdater.UpdateAsync(
+                    msg => BeginInvokeSafe(() => Log(msg, LogKind.Info)),
+                    new Progress<int>(_ => { }),
+                    CancellationToken.None);
+
+                BeginInvokeSafe(() =>
+                {
+                    if (lblKvrtStatus == null) return;
+                    if (res.Updated)
+                    {
+                        lblKvrtStatus.Text = "Đã tự cập nhật KVRT lúc " + DateTime.Now.ToString("HH:mm:ss");
+                        lblKvrtStatus.ForeColor = ClrMidGreen;
+                        Log("Tự động cập nhật KVRT thành công.", LogKind.Success);
+                    }
+                    else if (res.Offline)
+                    {
+                        lblKvrtStatus.Text = "Offline — chưa cập nhật KVRT";
+                        lblKvrtStatus.ForeColor = ClrMuted;
+                        Log("Máy offline — bỏ qua tự động cập nhật KVRT.", LogKind.Info);
+                    }
+                    else
+                    {
+                        lblKvrtStatus.Text = KvrtUpdater.DescribeCurrent(KvrtUpdater.LocateKvrt());
+                        lblKvrtStatus.ForeColor = ClrMuted;
+                        Log("Tự động cập nhật KVRT: " + res.Message, LogKind.Warn);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                BeginInvokeSafe(() => Log("Lỗi tự cập nhật KVRT: " + ex.Message, LogKind.Warn));
+            }
+        }
+
+        private static string Truncate(string s, int max)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+            return s.Length <= max ? s : s.Substring(0, max) + "...";
         }
 
         private void ExecuteCommand(string cmd, string args)

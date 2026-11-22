@@ -1,286 +1,129 @@
-# Danny — Trợ lý Công nghệ thông tin (ver5.6)
+# Danny — Trợ lý Công nghệ Thông tin
 
-Phần mềm quản trị máy tính cho đơn vị quân sự, viết bởi **Trung tá Đoàn Danh Quyết**.
+**Phần mềm được viết bởi Trung tá Đoàn Danh Quyết — Trợ lý Công nghệ Thông tin — Cellphone: 0366.714.139**
 
-| | |
-|---|---|
-| **Phiên bản hiện tại** | 5.6.0 — [tải tại đây](https://github.com/doandanhquyetqk7/Danny/releases/tag/v5.6.0) |
-| **Nền tảng** | .NET 8 / Windows Forms · yêu cầu quyền Administrator |
-| **Liên hệ** | 0366.714.139 · Bộ Chỉ huy Quân sự tỉnh Lâm Đồng |
-| **Theo dõi phiên bản** | [Projects board — Danny project](https://github.com/users/doandanhquyetqk7/projects/1) |
+Ứng dụng Windows C# / .NET 8 WinForms dành cho đơn vị quân sự: chẩn đoán mạng nội bộ,
+cấu hình IP một chạm, tạo USB an toàn (chống MiAV chặn ở tầng kernel), làm sạch dấu vết
+truy cận Internet, hỗ trợ kỹ thuật từ xa, sao lưu máy tính và điều tra chứng cứ số (DFIR).
 
-## Lộ trình phát triển
+---
 
-| Phiên bản | Nội dung | Trạng thái |
+## Phiên bản
+
+| Phiên bản | Ngày | Ghi chú |
 |---|---|---|
-| **ver5.0** | Bước cuối: tự động cài lại MiAV trước khi reboot | ✅ Đã phát hành — [release](https://github.com/doandanhquyetqk7/Danny/releases/tag/v5.0.0) |
-| **ver5.1** | Báo cáo & nhật ký làm sạch tổng hợp theo đơn vị, xuất PDF | 🔵 Ready |
-| **ver5.2** | Xác minh chữ ký Authenticode cho bộ phân phối | ⚪ Backlog |
-| **ver5.3** | Dashboard trạng thái giám sát EDR (4 service MiAV + driver kernel) | ⚪ Backlog |
-| **ver5.4** | Chế độ an toàn "không Internet" cho bước làm sạch (tự ngắt adapter) | ⚪ Backlog |
-| **ver5.5** | **Hỗ trợ kỹ thuật từ xa** (UltraVNC 1.4.2.0 + mã hóa DSM) | ✅ Đã phát hành — [release](https://github.com/doandanhquyetqk7/Danny/releases/tag/v5.5.0) |
-| **ver5.6** | ★ **Chuyển hỗ trợ từ xa sang RustDesk 1.5.3** — Direct IP Access **100% offline**, whitelist IP/CIDR, xác nhận an toàn | ✅ Đã phát hành — [release](https://github.com/doandanhquyetqk7/Danny/releases/tag/v5.6.0) |
+| **5.7.0** | 22/11/2026 | Forensic DFIR · KVRT updater · Uncover files · Dọn dẹp 4 bước · PC Backup |
+| 5.6.0 | — | Thay UltraVNC bằng RustDesk (Direct IP) |
+| 5.5.0 | — | Hỗ trợ kỹ thuật từ xa |
+| 5.0.0 | — | Làm sạch PC một chạm · USB an toàn |
 
+→ Chi tiết thay đổi: [`CHANGELOG.md`](CHANGELOG.md)
+→ Hướng dẫn sử dụng: [`HUONG-DAN-SU-DUNG.md`](HUONG-DAN-SU-DUNG.md)
 
-## Các tab chức năng
+---
 
-| # | Tab | Chức năng |
-|---|---|---|
-| 1 | **KIỂM TRA KẾT NỐI** | Chẩn đoán 4 bước; tra cứu 130 đơn vị (gõ tiếng Việt có/không dấu); xuất báo cáo |
-| 2 | **USB AN TOÀN 2.6** | Tạo USB an toàn cho MiAV — không bị chặn ở tầng kernel; thư mục `DATA` đọc/ghi nhưng chặn chạy `.exe` |
-| 3 | **CẤU HÌNH IP MỘT CHẠM** | Đặt IP tĩnh LAN đúng dải đơn vị, có rollback khi lỗi |
-| 4 | **CẤU HÌNH MẠNG** | Cấu hình IP/DNS thủ công |
-| 5 | **LÀM SẠCH PC MỘT CHẠM** | Xóa log MiAV + artifact Windows → quét KVRT → **cài lại MiAV** → reboot |
-| 6 | **BẢO MẬT & TIỆN ÍCH** | Chạy KVRT thủ công, xóa Event Viewer, hiện file ẩn |
-| 7 | **HỖ TRỢ KỸ THUẬT TỪ XA** | ★ Máy nhận kết nối / Máy cần hỗ trợ — **RustDesk Direct IP (offline)**, mở port 21118, whitelist IP/CIDR, xác nhận an toàn |
+## Tải về
 
-## Quy trình “Hỗ trợ kỹ thuật từ xa” (ver5.6 — RustDesk Direct IP)
-
-```
-MÁY NHẬN KẾT NỐI (Kỹ thuật viên)              MÁY CẦN HỖ TRỢ (PC quân sự)
-─────────────────────────────────────────      ──────────────────────────────────────────
-[Nhận kết nối]                                [Cần hỗ trợ]
-  ↓                                             ↓
-Mở Firewall TCP 21118 (khoá theo              Mở Firewall TCP 21118 (khoá theo
-RemoteAddress = whitelist)                     RemoteAddress = whitelist)
-  ↓                                             ↓
-Ghi RustDesk2.toml [options]:                  Ghi RustDesk2.toml [options]:
-  direct-server = 'Y'                            direct-server = 'Y'
-  direct-access-port = '21118'                   direct-access-port = '21118'
-  whitelist = '86.134.32.150/24'                 whitelist = '86.134.32.150/24'
-  approve-mode = 'click'                         approve-mode = 'click'
-  ↓                                             ↓
-Tạo shortcut "Bật hỗ trợ từ xa"                Cài + khởi động service RustDesk
-  ↓                                             ↓
-rustdesk.exe --server (listener 21118)         Kết nối TRỰC TIẾP → <IP kỹ thuật viên>:21118
-  ↓                                             ↓
-Hiển thị IP cho máy cần hỗ trợ                 ★ Hiển thị trạng thái kết nối
-```
-
-Cả hai vai trò đều tự động hoá 4 bước sau khi bấm nút — người dùng chỉ cần
-bấm 1 lần. Cổng mặc định `21118`, whitelist mặc định `86.134.32.150/24`
-(sửa tay được), có thể đổi qua `--port` / `--whitelist`.
-
-> **Khác biệt so với ver5.5 (UltraVNC):** kết nối **trực tiếp** qua IP nội bộ,
-> **không cần ID Server / Relay Server, không cần Internet** — 100% offline.
-> Đổi lại, mỗi phiên đều phải được **xác nhận thủ công** (`approve-mode=click`).
-
-## Quy trình “Làm sạch PC một chạm” (ver5.0)
-
-```
- 1  Kiểm tra trạng thái Internet           8  Xóa NHÓM B (artifact MiAV)
- 2  Kiểm kê dòng Logs type='Internet'     9  Xác minh
- 3  Sao lưu AgentFMC                      10  Bật lại 4 service MiAV
- 4  Dừng 4 service MiAV                  11  Kaspersky KVRT — quét toàn bộ ổ + khử nhiễm
- 5  Dừng tiến trình GUI MiAV             12  ★ Cài lại MiAV (SetupMiAV.exe /VERYSILENT)
- 6  Xóa NHÓM A (bảng Logs, policy.*)     13  Báo cáo CSV → Khởi động lại máy
- 7  Xóa NHÓM C (browser, SRUM, DNS…)
-```
-
-Bước 12 (mới ở ver5.0) gọi `SetupMiAV.exe` với tham số
-`/VERYSILENT /SUPPRESSMSGBOXES /SP- /NORESTART /LANG=english /LOG="…"`,
-rồi xác minh 4 service `MiAVWD` / `MiAVUpdate` / `MiAVProtect` / `Defense`
-đã được tạo.
-
-## Cấu trúc bộ cài
-
-```
-Danny-ver5.6/
-├── Danny-ver5.6.exe           69,16 MB  ← khuyến nghị (self-contained)
-├── Danny-ver5.6-nethost.exe   1,41 MB  ← cần .NET 8 Desktop Runtime
-├── tools\KVRT.exe            116,28 MB
-├── tools\SetupMiAV.exe        21,20 MB
-├── tools\RustDesk\          RustDesk 1.5.3 + RustDesk Server tự host
-│   ├── rustdesk.exe            25,02 MB  ← client (chế độ Direct IP)
-│   └── server\                            ← ID server / Relay server (tùy chọn)
-│       ├── hbbs.exe, hbbr.exe, rustdesk-utils.exe
-└── HUONG-DAN-SU-DUNG.md
-```
-
-## Mã nguồn
-
-| Đường dẫn | Nội dung |
+| Bản | Link |
 |---|---|
-| `NetSecTool/` | Mã nguồn C# (.NET 8 WinForms) |
-| `NetSecTool/PcCleaner.cs` | Engine làm sạch + cài lại MiAV |
-| `NetSecTool/UsbSafeMaker.cs`, `UsbFormatter.cs` | Tạo USB an toàn 2.6 |
-| `NetSecTool/IpPlan.cs`, `IpNetTable.cs`, `OneClickIpService.cs` | Cấu hình IP một chạm |
-| `NetSecTool/NetDiagnostics.cs` | Chẩn đoán kết nối mạng |
-| `NetSecTool/UnitSearch.cs`, `UnitSearchBox.cs` | Tìm kiếm đơn vị (bỏ dấu tiếng Việt) |
-| `NetSecTool/RemoteSupport.cs` | ★ Engine hỗ trợ kỹ thuật từ xa (RustDesk Direct IP) |
-| `NetSecTool/ShellLink.cs` | Tạo shortcut Unicode qua COM IShellLinkW |
-| `Phan tich MiAV/` | Báo cáo phân tích EDR MiAV 4.1.1.2 + script làm sạch log |
-| `report/` | Báo cáo cơ chế MiAV / USB An Toàn (kèm sơ đồ) |
-| `evidence/` | Evidence E-001 … E-008 |
+| Gói đầy đủ (self-contained) | <https://github.com/doandanhquyetqk7/Danny/releases> |
+| Mã nguồn | `git clone https://github.com/doandanhquyetqk7/Danny.git` |
 
-## Build
+Bản phát hành gồm 2 file `.exe`:
 
-```bash
-cd NetSecTool
-# self-contained, single-file
-dotnet publish -c Release -r win-x64 --self-contained true \
-  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
-  -p:EnableCompressionInSingleFile=true -o ../work/pub
+- **`Danny-ver5.7.exe`** — self-contained, single-file, chạy được trên mọi máy Windows 10/11 **không cần cài .NET**
+- **`Danny-ver5.7-nethost.exe`** — framework-dependent, ~1,4 MB, cần .NET 8 Desktop Runtime
 
-# framework-dependent, single-file
-dotnet publish -c Release -r win-x64 -p:SelfContained=false \
-  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
-  -o ../work/pub-nethost
+> **Bắt buộc:** giữ nguyên thư mục `tools\` cạnh file `.exe`.
+
+---
+
+## Build từ mã nguồn
+
+```powershell
+git clone https://github.com/doandanhquyetqk7/Danny.git
+cd Danny
+.\build_and_publish.ps1 -SkipPublish
 ```
 
-> File nhị phân lớn (`*.exe`, `*.zip`) được lưu bằng **Git LFS** — cần `git lfs install` khi clone.
+Yêu cầu: **.NET 8 SDK** + Windows 10/11.
 
-## CLI
+---
 
-```cmd
-Danny-ver5.6.exe --make-safe "J:\"    :: Tạo USB An Toàn 2.6
-Danny-ver5.6.exe --check "J:\"        :: Kiểm tra trạng thái USB an toàn
-Danny-ver5.6.exe --diag [--full]       :: Kiểm tra kết nối mạng
-Danny-ver5.6.exe --clean               :: Làm sạch PC một chạm (kèm cài lại MiAV)
-Danny-ver5.6.exe --remote-listen [--port 21118] [--whitelist "IP/CIDR"]   :: Máy nhận kết nối
-Danny-ver5.6.exe --remote-connect --ip <host> [--port 21118]  :: Máy cần hỗ trợ
+## Cấu trúc mã nguồn
+
+```
+NetSecTool/
+├── Program.cs                     Điểm vào + CLI headless
+├── Form1.cs                       Form chính (partial)
+├── Form1.NewTabs.cs               Tab HIỆN FILE/FOLDER ẨN
+├── Form1.BackupTab.cs             Tab SAO LƯU MÁY TÍNH
+├── Form1.ForensicTab.cs           Tab KIỂM TRA AN TOÀN THÔNG TIN
+├── NetDiagnostics.cs              Chẩn đoán mạng / tra cứu đơn vị
+├── IpOneClick.cs                  Cấu hình IP một chạm
+├── UsbSafeBuilder.cs              Tạo USB an toàn 2.6
+├── PcCleanerV57.cs                Quy trình làm sạch PC 4 bước
+├── BackupService.cs               Engine sao lưu (Acronis + robocopy)
+├── UncoverFiles.cs                Gỡ thuộc tính ẩn
+├── KvrtUpdater.cs                 Tự cập nhật Kaspersky KVRT
+├── RemoteSupport.cs               RustDesk Direct IP
+├── Forensic/                      Module Forensic DFIR
+│   ├── ForensicModels.cs
+│   ├── EvidenceCollector.cs
+│   ├── RuleEngine.cs
+│   ├── TimelineEngine.cs
+│   ├── ReportWriter.cs
+│   └── ForensicEngine.cs
+└── Resources/
+    ├── KVRT.exe                   Kaspersky Virus Removal Tool
+    ├── SetupMiAV.exe              Trình cài đặt MiAV 4.1.1.2 (BTL86)
+    ├── RustDesk/                  RustDesk 1.5.3 + server (hbbs/hbbr)
+    └── rules/forensic-rules.json  Bộ quy tắc Forensic (sửa ngoài, không cần build lại)
 ```
 
 ---
 
-# Hồ sơ phân tích (reverse engineering)
+## Chức năng chính
 
-> Workspace dùng chung cho nhiều case. Phân tích mới nhất nằm ở [`report/report.md`](report/report.md)
-> và [`Phan tich MiAV/BAO-CAO-PHAN-TICH-MIAV.md`](Phan%20tich%20MiAV/BAO-CAO-PHAN-TICH-MIAV.md).
-
-## Case hiện tại: MiAV 4.1.1.2 & USB An Toàn 2.6 (BTL86) — cơ chế quản lý USB
-
-> Workspace dùng chung cho nhiều case. Phân tích mới nhất nằm ở [`report/report.md`](report/report.md).
-
-| Mục | Giá trị |
+| Nhóm | Mô tả |
 |---|---|
-| Loại | Phân tích tĩnh 2 installer Inno Setup (read-only, không thực thi) |
-| MiAV 4.1.1.2 | Delphi x86-32 · engine quyết định `@ 0x90ECE0` · khoá bằng minifilter CBFS Filter 2020 |
-| USB An Toàn 2.6 | `USB_ATTT.exe` (VB6 native) · format + label `USB-AT2.6` + bộ file chỉ dấu + ACL |
-| Kết luận | MiAV là bên **kiểm tra & cưỡng chế**, USB An Toàn là bên **sinh dấu vết**; `config.ini [Drive] usb_no_at = block` là công tắc khóa |
-
-| File | Mô tả |
-|---|---|
-| `report/report.md` | Báo cáo cơ chế đầy đủ (tiếng Việt) |
-| `report/diagrams/*.svg\|pdf\|png` | 5 sơ đồ kiến trúc / luồng quyết định / trạng thái / offset map |
-| `evidence/E-001.md` | Định danh, hash, Inno Setup script, layout |
-| `evidence/E-002.md` | MiAV: engine quyết định USB, phân loại, khoá kernel, cảnh báo, syslog |
-| `evidence/E-004.md` | USB_ATTT.exe: API, quy trình tạo USB, ACL, đối chiếu với MiAV |
-| `scope.md`, `workitems.md`, `timeline.md` | Hồ sơ case (pass `review_case.py --strict`) |
-| `work/*.py` | Script PE/Delphi/disasm/string/diagram tự viết |
+| **Mạng** | Chẩn đoán LAN/WAN, tra cứu đơn vị (có dấu / không dấu), cấu hình IP tĩnh một chạm |
+| **USB an toàn** | Tạo USB 2.6 với `inf.bin` hợp lệ — vượt qua cơ chế chặn ở tầng kernel của MiAV |
+| **Làm sạch dấu vết** | 4 bước: tệp rác → trình duyệt → USB sâu → Event Log; kèm KVRT + cài lại MiAV |
+| **Sao lưu** | Ảnh hệ thống (Acronis) + dữ liệu người dùng (robocopy), chỉ ổ di động ≥ 1 TB |
+| **Forensic DFIR** | Thu thập chỉ đọc + rule engine + timeline tương quan + báo cáo SHA-256 |
+| **Hỗ trợ từ xa** | RustDesk Direct IP — 100% offline, whitelist CIDR, cổng 21118 |
 
 ---
 
-## Case trước: CTF pwn GOT overwrite
+## CLI headless
 
-## Kết quả
-
-| Mục | Giá trị |
-|-----|---------|
-| Loại | CTF pwn (GOT overwrite) |
-| Độ khó | Khó (so với bài Trung bình chỉ lật 1 cờ bool) |
-| Binary | `got_overwrite` — ELF 64-bit Linux, no PIE, no RELRO, NX on |
-| Hidden func | `thong_bao_bi_mat` @ `0x401216` |
-| Target GOT  | `got.strlen` @ `0x403410` |
-| Payload     | `%4198934c%8$llna\x10\x34\x40\x00\x00\x00\x00\x00` (24 bytes) |
-| Format string offset | **6** (xác nhận bằng Unicorn emulation) |
-
-## Tóm tắt kỹ thuật
-
-`main()` đọc input vào `buf[256]` rồi gọi `printf(buf)` — **format string
-vulnerability** cổ điển. Sau đó main gọi `xu_ly_du_lieu(buf)`, hàm này
-gọi `strlen(buf)`. Trong binary có một hàm ẩn `thong_bao_bi_mat` đọc
-`flag.txt` và in nội dung — hàm này không bao giờ được gọi trong luồng
-bình thường.
-
-Vì binary **không PIE** và **không RELRO**, GOT là vùng nhớ tĩnh (0x403xxx)
-và có quyền ghi. Payload format string ghi địa chỉ `0x401216` (hàm ẩn)
-vào `0x403410` (GOT entry của `strlen`). Lần gọi `strlen` tiếp theo
-sẽ nhảy sang hàm ẩn và in flag.
-
-## Các file
-
-| File | Mô tả |
-|------|-------|
-| `got_overwrite` | Binary gốc (Linux ELF 64-bit) |
-| `got_overwrite.bak` | Backup |
-| `exploit.py` | Exploit pwntools chính (payload + runner) |
-| `inspect_elf.py` | Recon: checksec, symbols, GOT, PLT |
-| `disasm2.py` | Disassembly main / xu_ly_du_lieu / thong_bao_bi_mat bằng Capstone |
-| `rodata.py` | Dump rodata strings |
-| `verify_offset5.py` | **Quan trọng**: xác minh offset=6 bằng Unicorn emulation |
-| `work/scope.md` | Scope / authorization |
-| `evidence/E-001.md` | Evidence: phân tích tĩnh |
-| `evidence/E-002.md` | Evidence: format string offset = 6 (Unicorn) |
-| `evidence/E-003.md` | Evidence: payload build |
-| `report/report.md` | Báo cáo cuối |
-
-## Cách chạy exploit
-
-Trên máy **Linux** (binary Linux ELF không chạy được trên Windows):
-
-```bash
-# Local test với flag.txt giả
-echo "CTF{test}" > flag.txt
-python3 exploit.py
-
-# Remote (nếu có server)
-HOST=ctf.example.com PORT=1337 python3 exploit.py REMOTE
+```powershell
+Danny-ver5.7.exe --kvrt-update
+Danny-ver5.7.exe --uncover "D:\Data" [--no-recursive] [--dry-run]
+Danny-ver5.7.exe --backup --target I: [--no-system-image] [--no-user-data] [--dry-run]
+Danny-ver5.7.exe --forensic [--out "C:\Bao-cao"]
 ```
 
-Kỳ vọng output: khoảng 4 MB khoảng trắng (từ `%4198934c`) + dòng
-`>>> HE THONG DA BI CHIEM QUYEN: <flag content>`.
+---
 
-## Tại sao offset=6?
+## Bản quyền & phụ thuộc bên thứ ba
 
-Trong x86-64 SysV ABI, variadic args 1-5 của printf nằm trong
-`rsi, rdx, rcx, r8, r9`. Từ arg thứ 6 trở đi, giá trị được đọc từ
-stack của caller, bắt đầu từ `[rsp_tại_call_site + 0]`.
+- **Acronis CLI** (`acrocmd.exe`) — **không** đóng gói vì bản quyền. Người dùng tải và đặt vào `tools\acronis\`.
+- `KVRT.exe`, `SetupMiAV.exe`, `RustDesk` — giữ nguyên bản gốc của nhà sản xuất.
 
-Trong `main`:
-- `sub rsp, 0x100` → `rsp = rbp - 0x100`
-- `buf` nằm ở `rbp - 0x100`
-- Tại lệnh `call printf`: `rsp = rbp - 0x100 = &buf`
-- Vậy stack variadic arg 6 = `[rsp + 0] tại call` = `buf[0..7]`
+---
 
-Xác minh bằng `verify_offset5.py` (Unicorn): đặt marker `AAAA` tại
-`buf[0..7]`, thay thế printf bằng stub đọc 15 variadic positions.
-Stub đọc được `AAAA%6$p` ở **position 6** → offset = 6. ✓
+## Lưu ý an toàn
 
-## Tại sao `%lln`?
+Phần mềm thực hiện các thao tác can thiệp sâu vào hệ thống (xóa log, thay đổi ACL Registry,
+chiếm quyền sở hữu khóa Registry, định dạng USB). **Luôn sao lưu dữ liệu trước khi chạy
+"Chức năng làm sạch PC một chạm"** — thao tác này không thể hoàn tác.
 
-- `got.strlen` lưu trữ 64-bit pointer (địa chỉ libc của `strlen`)
-- Cần ghi toàn bộ 8 byte = 0x0000000000401216
-- `%lln` ghi 64-bit (8 byte) — ghi đúng 1 lần, đơn giản nhất
-- `%n` (32-bit) cũng được, nhưng chỉ ghi được 4 byte thấp; byte cao
-  của GOT entry (0x00007fxx...) sẽ vẫn còn → gọi `strlen` sẽ crash
-- `%hn` / `%hhn` cần nhiều lần ghi và phức tạp hơn
+Chế độ Forensic là **chỉ đọc** và không sửa đổi bất kỳ dữ liệu nào trên máy đích.
 
-## Tại sao `%4198934c`?
+---
 
-- Giá trị cần ghi: 0x401216 = 4,198,934 (decimal)
-- `%Nc` yêu cầu printf in N ký tự (padding) → counter của `%n`/%`lln`
-  tăng lên N
-- Sau `%4198934c`, counter = 4,198,934 = 0x401216
-- `%8$lln` ghi counter này (8 bytes) vào địa chỉ ở position 8
+## Giấy phép
 
-## Các lệnh kiểm tra đã chạy
-
-```
-$ python inspect_elf.py
-  Arch: amd64
-  RELRO: No RELRO
-  Stack: No canary found
-  NX: NX enabled
-  PIE:  No PIE (0x400000)
-  GOT[strlen] = 0x403410
-  thong_bao_bi_mat = 0x401216
-
-$ python verify_offset5.py
-  pos  6 (stack[+0]): 0x7024362541414141
-  >>> AAAA%6$p at position 6  -> offset = 6 confirmed
-
-$ python exploit.py
-  [+] payload length = 24 bytes
-  [+] payload hex    = 2534313938393334632538246c6c6e611034400000000000
-```
+MIT
